@@ -33,6 +33,8 @@
 
 ## Product and privacy conventions
 
+- Write **Codex Mac App** in product names and user-facing descriptions. Keep
+  **Mac App** explicit; do not shorten it to **Codex Mac**.
 - Keep the native UI simple, in English, with clear statuses and a small number of
   useful controls. Closing the UI must not stop the independently managed service.
 - Reuse the engine owned by the Mac app. Never silently start a separate Codex

@@ -31,16 +31,16 @@ STATES = {
     'stopped': ('The bridge is stopped.', 'Start the bridge when you are ready.'),
     'ready': ('The local bridge is ready.', 'The glasses connection is not measured by this application.'),
     'busy': ('A bridge task is active.', 'Wait for it to finish before changing the service.'),
-    'delivery_pending': ('A previous delivery still needs confirmation.', 'Check the selected task in the Mac app before changing the service.'),
+    'delivery_pending': ('A previous delivery still needs confirmation.', 'Check the selected task in the Codex Mac App before changing the service.'),
     'starting': ('The supervised bridge is starting.', 'The service will reconnect automatically.'),
-    'waiting_for_desktop': ('The Mac app is unavailable.', 'Open the Mac app; the bridge will reconnect automatically.'),
+    'waiting_for_desktop': ('The Codex Mac App is unavailable.', 'Open the Codex Mac App; the bridge will reconnect automatically.'),
     'waiting_for_tailscale': ('Waiting for the configured network.', 'Open Tailscale on this Mac and connect it.'),
-    'desktop_update_required': ('The Mac app version needs compatibility verification.', 'Review a compatible bridge release before using this version.'),
+    'desktop_update_required': ('The Codex Mac App version needs compatibility verification.', 'Review a compatible bridge release before using this version.'),
     'unreachable': ('The supervised bridge is not responding.', 'Run diagnostics. Unconfirmed messages are never resent automatically.'),
     'unmanaged_service': ('Another service owns the bridge port.', 'Inspect the existing service before starting this bridge.'),
     'invalid_installation': ('The managed installation needs attention.', 'Run diagnostics or reinstall a reviewed release.'),
     'update_required': ('The verified bridge cannot start.', 'Run diagnostics and review the installed runtime.'),
-    'reconnecting': ('The bridge is reconnecting.', 'Desktop tasks continue in the Mac app.'),
+    'reconnecting': ('The bridge is reconnecting.', 'Desktop tasks continue in the Codex Mac App.'),
     'reconnect_pending': ('The network changed while a bridge task was active.', 'The bridge will reconnect after the task finishes.'),
     'restart_pending': ('The bridge supervisor is waiting to retry.', 'The same installed release will be used.'),
     'port_in_use': ('Another process is using the bridge port.', 'Run diagnostics; a second bridge will not be started.'),
@@ -352,7 +352,7 @@ def check_start(support, control):
     common.validate_release(support, control['activeRelease'])
     build = common.desktop_build()
     if build is not None and build != common.EXPECTED_BUILD:
-        raise common.BridgeError('The Mac app version needs compatibility verification before starting this bridge.')
+        raise common.BridgeError('The Codex Mac App version needs compatibility verification before starting this bridge.')
     for name in manage.OPERATIONS:
         owned_file(Path(support) / 'operations' / name)
 
@@ -404,7 +404,7 @@ def stop_service(support, control, config):
         manage.wait_unloaded()
         manage.wait_port_free(config.get('port', 3456))
     common.status(support, 'stopped', 'Bridge supervision was stopped for this login session.',
-                  'The launch-at-login preference is unchanged. Desktop tasks remain in the Mac app.')
+                  'The launch-at-login preference is unchanged. Desktop tasks remain in the Codex Mac App.')
 
 
 def mutate(command, support, preferences=None):

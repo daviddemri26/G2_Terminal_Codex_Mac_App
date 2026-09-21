@@ -13,8 +13,8 @@ and device validation must match the final description and screenshots.
 | --- | --- |
 | Full product title | Even Terminal for Codex Mac App Guide |
 | Even Hub name (19 characters) | Codex Mac App Guide |
-| Subtitle | Setup guide for the Codex Mac app and Even Terminal |
-| Short description | A setup guide for using Even Terminal with the Codex Mac app, without a separate Codex CLI workflow. |
+| Subtitle | Setup guide for the Codex Mac App and Even Terminal |
+| Short description | A setup guide for using Even Terminal with the Codex Mac App, without a separate Codex CLI workflow. |
 | Category, if available | Utilities or Reference; select the closest category offered by the portal |
 | Website | https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/ |
 | Support | https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/issues |
@@ -22,11 +22,11 @@ and device validation must match the final description and screenshots.
 
 ## Full description
 
-### Use Even Terminal with the Codex Mac app
+### Use Even Terminal with the Codex Mac App
 
-Already use Even G2, Even Terminal, and the Codex Mac app? Even Terminal for Codex Mac App helps you
-find and continue supported Mac conversations from your glasses. Your work stays
-in the same Mac conversation, so you can pick it up again when you return to
+Already use Even G2, Even Terminal, and the Codex Mac App? Even Terminal for Codex Mac App helps you
+find and continue supported Codex Mac App conversations from your glasses. Your work stays
+in the same Codex Mac App conversation, so you can pick it up again when you return to
 your desk. You do not need to start a separate Codex CLI session.
 
 **Even Terminal for Codex Mac App Guide is the small setup and reference companion.** It explains what
@@ -42,9 +42,9 @@ Mac software is a separate download with its own compatibility checks.
 ### Why the Mac bridge exists
 
 Even Terminal for Codex Mac App connects Even Terminal to the task engine already used by the Codex
-Mac app. It can reopen supported local conversations and their history, show
+Mac App. It can reopen supported local conversations and their history, show
 public progress and final answers, send follow-ups, and handle supported
-questions and approval choices. Some controls still need the Mac app.
+questions and approval choices. Some controls still need the Mac App.
 
 The Mac control window provides service status, pairing, launch-at-login
 settings, and text preferences: message timestamps, live progress updates, and
@@ -69,7 +69,7 @@ Even Terminal.
    Open **Even Terminal for Codex Mac App → Connect** on the Mac and scan its private QR code in the
    Even Realities app's **Terminal Mode**. Keep that QR code private.
 5. [Open a familiar conversation](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#first-use)
-   in Even Terminal. Keep your Mac logged in and awake, with Codex and your
+   in Even Terminal. Keep your Mac logged in and awake, with the Codex Mac App and your
    configured network available.
 
 ### Check compatibility before installing
@@ -81,14 +81,14 @@ bridge's device-validation record below.
 The Mac bridge is a **public alpha**. The reviewed combination is:
 
 - **macOS 14 or later**, with Apple Silicon as the reviewed setup.
-- **Codex Mac app 26.915.31945, build 9922**. The supported application identity
+- **Codex Mac App 26.915.31945, build 9922**. The supported application identity
   may be installed as `Codex.app` or `ChatGPT.app`.
 - **Even Terminal for Codex Mac App** bridge **0.2.8**, Mac control app **1.1.1**, pinned Even Terminal **0.10.4**,
   and Node **26.9.0**.
 - Apple's Command Line Tools with **Swift 6 or later and Python 3** for the
   current source installation. There is no Apple-notarized ready-made download.
 
-The Mac connection uses a private protocol. A different Codex version needs
+The Codex Mac App connection uses a private protocol. A different Codex Mac App version needs
 review before it is supported; the installer checks compatibility. Consult the
 [current compatibility record](https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/compatibility.json).
 
@@ -131,7 +131,7 @@ Realities product.
 Use real captures of the finished companion. Do not show the Mac bridge UI as
 though it were part of the Hub app, and never capture a real pairing QR.
 
-1. **Know if Even Terminal for Codex Mac App is for you** — A short explanation for Codex Mac app users.
+1. **Know if Even Terminal for Codex Mac App is for you** — A short explanation for Codex Mac App users.
 2. **Follow the setup checklist** — Requirements, Mac installation, and pairing.
 3. **Keep a quick reference in sight** — Short instructions on the glasses;
    detailed guides available on the phone.

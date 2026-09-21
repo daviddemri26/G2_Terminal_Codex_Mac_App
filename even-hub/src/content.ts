@@ -8,15 +8,15 @@ export const topics = [
   },
   {
     id: 'daily', title: 'Daily use',
-    text: 'Open Even Terminal to use conversations.\nKeep the Mac awake, logged in, and Codex open.\nChoose a conversation you recognize.\nRead replies and continue that conversation.\nThe Mac companion shows status and text options.',
+    text: 'Open Even Terminal to use conversations.\nKeep the Codex Mac App open; Mac awake and logged in.\nChoose a conversation you recognize.\nRead replies and continue that conversation.\nThe companion Mac App shows status and text options.',
   },
   {
     id: 'help', title: 'Troubleshoot',
-    text: 'Start with Overview in the Mac companion.\nCheck the configured network on both devices.\nAfter an uncertain send, check Codex before retrying.\nFor a changed LAN address: finish the interaction,\nrestart safely, then scan a new QR. Help is on phone.',
+    text: 'Start with Overview in the companion Mac App.\nCheck the configured network on both devices.\nUncertain send? Check the Codex Mac App first.\nFor a changed LAN address: finish the interaction,\nrestart safely, then scan a new QR. Help is on phone.',
   },
   {
     id: 'about', title: 'About',
-    text: 'Even Terminal for Codex Mac App\nUse Even Terminal with your Codex Mac app.\nNo separate Codex CLI workflow is needed.\nThis offline guide cannot chat or pair devices.\nIndependent community project. Details on phone.',
+    text: 'Even Terminal for Codex Mac App\nUse Even Terminal with your Codex Mac App.\nNo separate Codex CLI workflow is needed.\nThis offline guide cannot chat or pair devices.\nIndependent community project. Details on phone.',
   },
 ] as const;
 

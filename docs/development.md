@@ -10,7 +10,7 @@ release, so normal editing and builds do not change daily use.
   another reviewed executable can be selected with `--node`.
 - Network access to restore the exact locked npm dependencies.
 
-The Mac app and Tailscale are needed for live use, not the isolated unit tests.
+The Mac App and Tailscale are needed for live use, not the isolated unit tests.
 The native application is built locally for the current Mac architecture; it is
 ad-hoc signed, not a notarized or universal distribution.
 

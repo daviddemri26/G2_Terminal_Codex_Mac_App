@@ -35,7 +35,7 @@ Protected API requests require the pairing token. The transport is HTTP; the
 token authenticates requests but does not itself encrypt network traffic.
 
 The local desktop connection is independent of that network choice. It connects
-the bridge to the Mac app on the same computer. **It is therefore technically
+the bridge to the Mac App on the same computer. **It is therefore technically
 plausible to use this desktop bridge over LAN without changing the Codex adapter.**
 That conclusion comes from the code; a physical LAN phone/glasses test has not
 been performed for this project.

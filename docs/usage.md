@@ -2,11 +2,11 @@
 
 Open **Even Terminal for Codex Mac App** from `/Applications/Even Terminal for Codex Mac App.app` or its Dock icon. This
 window manages the local background service; your conversations stay in the
-Codex Mac app and Even Terminal.
+Codex Mac App and Even Terminal.
 
 ## Overview
 
-The overview shows the bridge service, Mac app availability, and configured
+The overview shows the bridge service, Mac App availability, and configured
 network. Status refreshes automatically about every eight seconds while the
 control app is running. **Bridge is ready** means the local service, desktop
 connection, and configured local checks pass. For LAN/interface profiles,
@@ -78,7 +78,7 @@ and installed from this repository using the [maintenance procedure](maintenance
 | Status | What to do |
 | --- | --- |
 | Bridge is stopped | Start it when you want to use Even Terminal |
-| Waiting for the Mac app | Open the installed Codex Mac app |
+| Waiting for the Mac App | Open the installed Codex Mac App |
 | Waiting for the network | Restore the configured connection; open Tailscale if that is your selected mode |
 | Bridge is in use | Let the current interaction finish before maintenance |
 | Delivery needs confirmation | Inspect the selected Mac task; do not resend blindly |

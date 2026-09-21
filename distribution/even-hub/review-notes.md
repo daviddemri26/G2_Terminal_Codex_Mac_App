@@ -6,7 +6,7 @@ This package is a small English reference guide. It provides a useful setup and
 troubleshooting reference on G2, with more detailed explanations and URLs in the
 phone view. It does not submit AI prompts or provide the terminal interface.
 The existing Even Terminal product provides that interface; a separately
-installed Mac bridge connects it to the Codex Mac app.
+installed Mac bridge connects it to the Codex Mac App.
 
 Beyond the normal Even Hub environment, guide review requires **no additional
 account, external service, Mac, or pairing secret**.

@@ -19,8 +19,8 @@ their operators receive the normal information associated with your visit and
 apply their own privacy policies. There is no automatic external fetch by the
 guide. A link does not send a Mac pairing credential or conversation content.
 
-The separately installed Even Terminal for Codex Mac App Mac software has a different role: it connects
-Even Terminal to the Codex Mac app and maintains local configuration and delivery
+The separately installed Even Terminal for Codex Mac App has a different role: it connects
+Even Terminal to the Codex Mac App and maintains local configuration and delivery
 records. This guide does not change OpenAI's, Even Realities', GitHub's, or
 Tailscale's handling of their own services. See the
 [Even Terminal for Codex Mac App documentation](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/)

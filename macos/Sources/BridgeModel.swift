@@ -157,7 +157,7 @@ final class BridgeModel: ObservableObject {
         if let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.openai.codex") {
             NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration())
         } else {
-            operationError = "The Mac app could not be found. Open Codex from its installed location."
+            operationError = "The Codex Mac App could not be found. Open it from its installed location."
         }
     }
 

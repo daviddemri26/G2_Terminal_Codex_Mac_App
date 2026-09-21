@@ -8,7 +8,7 @@ a frozen copy of a reviewed build, with its own dependencies and integrity recor
 Even Terminal on phone/glasses
               │ authenticated HTTP + SSE over the configured network
               ▼
-     Managed HTTP bridge ─── private local IPC ─── Codex Mac app
+     Managed HTTP bridge ─── private local IPC ─── Codex Mac App
               ▲                                    existing task engine
               │ supervised by
        User LaunchAgent
@@ -59,7 +59,7 @@ change does not move private data, break pairing, or replace the running service
 | `~/Library/LaunchAgents/com.evencodex.desktop-bridge.plist` | Per-user launchd registration |
 
 Node and `/usr/bin/python3` remain external runtime dependencies. A frozen package
-does not freeze these executables or the Codex Mac app. The manifest records the
+does not freeze these executables or the Codex Mac App. The manifest records the
 Node path/version, and validation detects incompatible changes.
 
 ## Lifecycle and delivery
@@ -83,5 +83,5 @@ glasses; an idle event-stream connection alone does not block maintenance.
 The desktop adapter uses private IPC, including the local socket at
 `~/.codex/ipc/ipc.sock`. The supported app build is explicit in
 `compatibility.json`. This protocol can change after an app update. Unsupported
-actions fail closed and remain available through the Mac app where appropriate;
+actions fail closed and remain available through the Mac App where appropriate;
 see the detailed [client contract](../client-contract/README.md).

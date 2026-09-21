@@ -45,7 +45,7 @@ def main():
     node_tool = load_script('ensure-node')
     candidate = node_tool.ensure_node()
     check = setup.inspect(node=candidate['node'] if candidate['ready'] else None)
-    print('For Even Terminal users who work in the Codex Mac app. No Codex CLI is needed.\n')
+    print('For Even Terminal users who work in the Codex Mac App. No Codex CLI is needed.\n')
     for item in check['requirements']:
         print(('✓ ' if item['ready'] else '• ') + item['title'] + ': ' + item['message'])
     # LAN/interface discovery needs Node; allow a missing network check to be
@@ -80,7 +80,7 @@ def main():
     print('  • Download locked npm dependencies and build/test this source locally.')
     print('  • Install Even Terminal for Codex Mac App at ' + str(destination) + '.')
     print('  • Register a service for your login; preserve any existing pairing/network settings.')
-    print('  • Keep your Codex Mac app as the only task engine. No test prompts are sent.')
+    print('  • Keep your Codex Mac App as the only task engine. No test prompts are sent.')
     print('\nThis alpha builds locally and is not an Apple-notarized public download.')
     answer = input('Continue? [y/N] ').strip().lower()
     if answer not in ('y', 'yes'):

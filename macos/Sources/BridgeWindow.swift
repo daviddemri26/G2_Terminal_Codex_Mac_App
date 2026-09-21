@@ -17,13 +17,13 @@ private enum Section: String, CaseIterable {
         switch self { case .overview: "square.grid.2x2"; case .text: "textformat"; case .connect: "qrcode"; case .settings: "slider.horizontal.3"; case .maintenance: "wrench.and.screwdriver" }
     }
     var heading: String {
-        switch self { case .overview: "Codex on your G2, at a glance."; case .text: "Make room for your words."; case .connect: "From your Mac to your glasses."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
+        switch self { case .overview: "Your Codex Mac App, connected."; case .text: "Make room for your words."; case .connect: "From your Mac App to your glasses."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
     }
     var description: String {
         switch self {
-        case .overview: "Connect the Codex Mac app to Even Terminal."
+        case .overview: "Connect the Codex Mac App to Even Terminal."
         case .text: "Choose how messages are presented in Even Terminal."
-        case .connect: "Your existing Codex conversations, within reach."
+        case .connect: "Your existing Codex Mac App conversations, within reach."
         case .settings: "A few simple preferences for everyday use."
         case .maintenance: "Check your installation and manage its versions."
         }
@@ -129,7 +129,7 @@ struct BridgeWindow: View {
                         Text("for Codex Mac App").font(.system(size: 11, weight: .medium))
                     }.fixedSize(horizontal: true, vertical: false)
                 }.accessibilityElement(children: .ignore).accessibilityLabel("Even Terminal for Codex Mac App")
-                Text("Even Terminal · Codex Mac app")
+                Text("Even Terminal · Codex Mac App")
                     .font(.system(size: 9)).foregroundStyle(Palette.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }.padding(.horizontal, 21).padding(.top, 53).padding(.bottom, 28)
@@ -201,7 +201,7 @@ struct BridgeWindow: View {
             }.padding(21).frame(maxWidth: .infinity, alignment: .leading).panel()
 
             HStack(spacing: 13) {
-                connectionCard(title: "Mac connection", icon: "desktopcomputer", value: snapshot.desktopCompatible ? (snapshot.desktopAvailable ? "Available" : "App is closed") : "Check compatibility", available: snapshot.desktopCompatible && snapshot.desktopAvailable)
+                connectionCard(title: "Mac App connection", icon: "desktopcomputer", value: snapshot.desktopCompatible ? (snapshot.desktopAvailable ? "Available" : "App is closed") : "Check compatibility", available: snapshot.desktopCompatible && snapshot.desktopAvailable)
                 connectionCard(title: networkTitle(snapshot), icon: "network", value: snapshot.networkVerified == false ? "Configured · not checked" : snapshot.networkAvailable ? "Available" : "Not available", available: snapshot.networkAvailable)
             }
 
@@ -290,7 +290,7 @@ struct BridgeWindow: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {
                         Text("Live progress updates").font(.system(size: 13, weight: .semibold))
-                        Text("Follow along while Codex is working.").font(.system(size: 11)).foregroundStyle(Palette.secondary)
+                        Text("Follow progress from the Codex Mac App.").font(.system(size: 11)).foregroundStyle(Palette.secondary)
                     }
                     Spacer()
                     Toggle("Live progress updates", isOn: $textDraft.showProgressUpdates).labelsHidden().toggleStyle(.switch)
@@ -337,7 +337,7 @@ struct BridgeWindow: View {
     private func connect(_ snapshot: BridgeSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 18) {
-                connectionStep("1", title: "Open Codex on your Mac", detail: "Use the Mac app you already know. Sign in and open a conversation; no separate Codex terminal session is needed.")
+                connectionStep("1", title: "Open the Codex Mac App", detail: "Use the Mac App you already know. Sign in and open a conversation; no separate Codex terminal session is needed.")
                 connectionStep("2", title: networkTitle(snapshot), detail: snapshot.networkMode == "tailscale" || snapshot.networkMode == nil
                     ? "Connect your Mac and phone to the same Tailscale account. They can be on different Wi-Fi networks."
                     : "Use the connection already configured in Even Terminal. Read the guide for the requirements and limits of this connection type.")
@@ -355,7 +355,7 @@ struct BridgeWindow: View {
                 .font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(4)
             VStack(alignment: .leading, spacing: 8) {
                 Text("Reviewed compatibility").font(.system(size: 13, weight: .semibold))
-                Text("Codex Mac app 26.915.31945 · build 9922\nEven Terminal 0.10.4 · Even G2\nExact phone app and glasses firmware versions have not been recorded.")
+                Text("Codex Mac App 26.915.31945 · build 9922\nEven Terminal 0.10.4 · Even G2\nExact phone app and glasses firmware versions have not been recorded.")
                     .font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(5)
             }.padding(20).frame(maxWidth: .infinity, alignment: .leading).panel()
         }
@@ -398,7 +398,7 @@ struct BridgeWindow: View {
             }.padding(23).panel()
             VStack(alignment: .leading, spacing: 16) {
                 Text("Installation check").font(.system(size: 14, weight: .semibold))
-                Text("Verify the installed files, Mac compatibility, and service health. This check does not change your installation.")
+                Text("Verify the installed files, Mac App compatibility, and service health. This check does not change your installation.")
                     .font(.system(size: 12)).foregroundStyle(Palette.secondary).lineSpacing(4)
                 HStack(spacing: 10) {
                     Button { model.perform("diagnose") } label: { Label("Check Installation", systemImage: "checkmark.shield") }

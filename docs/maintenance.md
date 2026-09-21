@@ -112,14 +112,14 @@ single explicitly requested update, not an online update feed.
 
 ## Recovery after an update
 
-If the Mac app or Node changes, run diagnostics. Review that exact combination and
+If the Mac App or Node changes, run diagnostics. Review that exact combination and
 rebuild a compatible release before installation. Keep the version/integrity guard;
 the installer checks the reviewed Node version before freezing a candidate, so
 reinstalling cannot silently approve a Node upgrade.
 An unsupported release must not silently start a second task engine. Restoring a
-previous bridge cannot by itself restore an older Mac app or Node executable.
+previous bridge cannot by itself restore an older Mac App or Node executable.
 
-If Tailscale is unavailable, open it and reconnect. If the Mac app is unavailable,
+If Tailscale is unavailable, open it and reconnect. If the Mac App is unavailable,
 open the installed application. If the bridge port belongs to another process,
 inspect the owner rather than killing unrelated processes.
 

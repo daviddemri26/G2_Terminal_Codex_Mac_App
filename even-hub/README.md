@@ -1,7 +1,6 @@
 # Even Terminal for Codex Mac App Guide — Even Hub companion
 
-A small, offline guide for people using **Even G2 + Even Terminal + the Codex Mac
-app**. The glasses show four native topics: Set up, Daily use, Troubleshoot, and
+A small, offline guide for people using **Even G2 + Even Terminal + the Codex Mac App**. The glasses show four native topics: Set up, Daily use, Troubleshoot, and
 About. The phone screen carries fuller instructions and ordinary reference links
 to the [setup tutorial](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/)
 and [GitHub support](https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/issues).
@@ -26,7 +25,7 @@ npm run preview -- --port 4178 --strictPort
 The preview is at `http://127.0.0.1:4178`. A regular browser can read the phone
 guide. If no Even bridge arrives, its status changes to a clear phone-only
 fallback after six seconds. It never claims that your Mac or glasses connection
-has been verified. These commands do not touch the installed Mac app, runtime,
+has been verified. These commands do not touch the installed Mac App, runtime,
 pairing configuration, or root project's npm dependencies.
 
 With that preview server running, open a second terminal in this directory to

@@ -1,7 +1,7 @@
 # Set up Even Terminal for Codex Mac App
 
-Even Terminal for Codex Mac App is for **Even G2 owners who use Even Terminal and the Codex Mac app**.
-You can keep working in that Mac app, then find and continue the same supported
+Even Terminal for Codex Mac App is for **Even G2 owners who use Even Terminal and the Codex Mac App**.
+You can keep working in that Mac App, then find and continue the same supported
 conversation from your glasses. You do not need a separate Codex CLI workflow.
 
 This guide takes you through the current public alpha. Installation uses a guided
@@ -14,15 +14,15 @@ You need an Apple Silicon Mac running macOS 14 or later, an existing Codex accou
 Even G2 glasses paired with the Even Realities phone app, and the R1 ring used by
 the vendor's Terminal setup.
 
-Open the Mac app and check its About window: the reviewed combination is
+Open the Mac App and check its About window: the reviewed combination is
 **26.915.31945, build 9922**. The installer recognizes the supported application
 identity in `Codex.app` or `ChatGPT.app`, in Applications or your user
 Applications folder. It checks the actual version and build. Consult [compatibility.json](../compatibility.json) before
 installing if your app is newer or older.
 
 If the version is different, stop here and check for a reviewed Even Terminal for Codex Mac App update.
-Do not bypass the compatibility check or obtain old Mac app builds from unknown
-download sites. The [official Mac app guide](https://learn.chatgpt.com/docs/app)
+Do not bypass the compatibility check or obtain old Mac App builds from unknown
+download sites. The [official Mac App guide](https://learn.chatgpt.com/docs/app)
 explains OpenAI's app; its newest download is not automatically supported by this
 bridge.
 
@@ -132,12 +132,12 @@ the token or type an address manually.
 
 ## 6. Check that it works
 
-1. Keep the Mac logged in and awake, with Codex and the configured network available.
+1. Keep the Mac logged in and awake, with the Codex Mac App and the configured network available.
 2. In Even Terminal for Codex Mac App, check the overview. A ready state means its local checks pass.
 3. On the phone/glasses, select a Codex conversation whose title you recognize.
 4. Confirm that the expected history appears. Send a harmless message only in a
    conversation you intentionally choose for this test.
-5. Confirm that the reply appears in that same Mac conversation and on the glasses.
+5. Confirm that the reply appears in that same Codex Mac App conversation and on the glasses.
 
 This last step validates your actual devices. Passing the installer tests or
 seeing “ready” alone cannot prove the phone/glasses connection works.
@@ -154,7 +154,7 @@ Open **Even Terminal for Codex Mac App → Text**. The original presentation is 
 
 Changes apply to the next response or when you reopen completed history. An
 already active response keeps the settings it started with. Question and approval
-content, user messages, and the underlying Mac conversation are unchanged.
+content, user messages, and the underlying Codex Mac App conversation are unchanged.
 
 These controls do not change native font size, display brightness, the client's
 `tool end:` label, or the glasses' own wrapping. Adjust hardware display options
@@ -175,15 +175,15 @@ is no second copy of your task engine to manage.
 
 | What you see | First thing to do |
 | --- | --- |
-| Waiting for the Mac app | Open the reviewed Mac app and wait for it to finish starting |
+| Waiting for the Mac App | Open the reviewed Mac App and wait for it to finish starting |
 | Waiting for the network | Check the configured network on both Mac and phone |
-| A different Mac app version | Check this project's compatibility record and reviewed releases |
+| A different Mac App version | Check this project's compatibility record and reviewed releases |
 | Ready, but the phone cannot connect | Check both network connections, their access rules, and pairing |
-| An action unavailable on the glasses | Complete that action in the Mac app; not every native control is supported |
-| Delivery needs confirmation | Inspect the Mac conversation before retrying; do not resend blindly |
+| An action unavailable on the glasses | Complete that action in the Mac App; not every native control is supported |
+| Delivery needs confirmation | Inspect the Codex Mac App conversation before retrying; do not resend blindly |
 | Installation needs attention | Open Maintenance → Check Installation and follow the reported action |
 
-For an issue report, include your Even Terminal for Codex Mac App version, macOS, Mac app version/build,
+For an issue report, include your Even Terminal for Codex Mac App version, macOS, Mac App version/build,
 Even phone-app version, and G2 firmware version. Include only the safe diagnostic
 summary, never the pairing QR, token, raw logs, or private conversation text.
 

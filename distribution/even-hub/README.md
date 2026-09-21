@@ -27,9 +27,9 @@ The [Even Hub submission rules](https://hub.evenrealities.com/docs/ship/app-subm
 also prohibit “Even” in the manifest app name. That short name is therefore used
 consistently in the manifest, phone masthead, and native menu.
 The full guide title is **Even Terminal for Codex Mac App Guide**.
-Its subtitle is **Setup guide for the Codex Mac app and Even Terminal**. A user
+Its subtitle is **Setup guide for the Codex Mac App and Even Terminal**. A user
 installing it should expect a reference guide. Conversation discovery and
-interaction belong to Even Terminal connected to the separate Even Terminal for Codex Mac App application.
+interaction belong to Even Terminal connected to **Even Terminal for Codex Mac App**.
 
 ## Publication checks still needed
 

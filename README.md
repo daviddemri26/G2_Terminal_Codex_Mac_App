@@ -1,10 +1,10 @@
 # Even Terminal for Codex Mac App
 
-**Use your Codex Mac app conversations in Even Terminal on G2 glasses.**
+**Use your Codex Mac App conversations in Even Terminal on G2 glasses.**
 
 This is for people who use **Even G2 + Even Terminal** and do their work in the
-**Codex Mac app**, without running Codex in a terminal. Find an existing Mac
-conversation, follow its progress, and continue it from your glasses. Keep using
+**Codex Mac App**, without running Codex in a terminal. Find an existing
+conversation in that Mac App, follow its progress, and continue it from your glasses. Keep using
 the same conversation when you return to the Mac.
 
 [**Start with the setup guide →**](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/)
@@ -14,7 +14,7 @@ the same conversation when you return to the Mac.
 ## Why this exists
 
 Even Terminal connects smart glasses to coding agents. This project makes that
-experience work with the task engine **already owned by the Mac app**. You do not
+experience work with the task engine **already owned by the Mac App**. You do not
 have to start a separate Codex CLI session or move your conversations to another
 workflow.
 
@@ -26,7 +26,7 @@ and starts when you sign in. Closing the window leaves it running.
 
 - Find and reopen supported local Codex conversations, with their history.
 - Follow public progress and final answers, then send a follow-up or interrupt.
-- Answer supported questions and approval choices; complex controls remain in the Mac app.
+- Answer supported questions and approval choices; complex controls remain in the Mac App.
 - Choose message timestamps, live progress updates, and paragraph spacing. **The original display remains the default.**
 - Pair your phone with a QR code, check status, set launch at login, and run diagnostics.
 
@@ -36,7 +36,7 @@ labels. Even Terminal for Codex Mac App does not reproduce every Mac control. Se
 
 ## Start here
 
-1. **Check the requirements below.** Open your supported Codex Mac app and connect
+1. **Check the requirements below.** Open your supported Codex Mac App and connect
    your glasses to the Even Realities phone app.
 2. **Connect Tailscale on your Mac and phone** for the guided first setup. If you
    already use a different Even Terminal connection, read the [network guide](docs/network-options.md).
@@ -52,7 +52,7 @@ does not require you to install or use the Codex CLI.
 
 **Current release stage: public alpha.** Installation builds from source and needs
 Apple's Command Line Tools. There is no Apple-notarized, ready-made download yet.
-The desktop connection uses a private protocol, so it supports a specific Mac app
+The desktop connection uses a private protocol, so it supports a specific Mac App
 version rather than every current or future release.
 
 ## What you need
@@ -60,7 +60,7 @@ version rather than every current or future release.
 | Component | Supported / reviewed combination |
 | --- | --- |
 | Mac | macOS 14 or later; Apple Silicon is the reviewed setup |
-| Codex in the Mac app | **26.915.31945, build 9922**; supported `Codex.app` or `ChatGPT.app` identity |
+| Codex in the Mac App | **26.915.31945, build 9922**; supported `Codex.app` or `ChatGPT.app` identity |
 | Glasses | **Even G2**, with the Even Realities phone app and Terminal Mode; vendor setup includes the R1 ring |
 | G2 firmware / phone app | Exact versions have not been recorded for certification; no universal/minimum firmware claim |
 | Connection | Tailscale for new setup; existing LAN/interface profiles can be preserved |
@@ -68,8 +68,8 @@ version rather than every current or future release.
 | Included dependency | Pinned Even Terminal **0.10.4**; Node **26.9.0** |
 
 The definitive release versions are in [compatibility.json](compatibility.json).
-If your Mac app version differs, the installer stops with an explanation. A new
-Mac app build must be reviewed before it is accepted. The bridge does not bypass
+If your Mac App version differs, the installer stops with an explanation. A new
+Mac App build must be reviewed before it is accepted. The bridge does not bypass
 that check or silently start another task engine.
 
 **Does it work without Tailscale?** Even Terminal already supports the same Wi-Fi
@@ -83,16 +83,16 @@ Read the [network comparison](docs/network-options.md).
 ## How it works, simply
 
 ```text
-Even G2 ↔ Even Realities phone app ↔ configured network ↔ Even Terminal for Codex Mac App ↔ Codex Mac app
+Even G2 ↔ Even Realities phone app ↔ configured network ↔ Even Terminal for Codex Mac App ↔ Codex Mac App
 ```
 
 The phone sends authenticated messages to the bridge on your Mac. The bridge
-translates them into the Mac app's local protocol, and sends its public responses
-back in the format Even Terminal understands. The Mac app remains responsible
+translates them into the Mac App's local protocol, and sends its public responses
+back in the format Even Terminal understands. The Mac App remains responsible
 for running the task. Saved delivery records help reconcile interrupted
 connections without blindly sending the same instruction twice.
 
-Keep your Mac logged in and awake, with Codex and the configured network available.
+Keep your Mac logged in and awake, with the Codex Mac App and the configured network available.
 Automatic startup begins at login, not before it, and Even Terminal for Codex Mac App does not change
 sleep settings. “Ready” confirms local checks; seeing your conversation on the
 glasses is the separate end-to-end check.

@@ -73,7 +73,7 @@ struct BridgeSnapshot: Decodable, Sendable {
         if !running { return "Bridge is stopped" }
         if isReady { return "Bridge is ready" }
         if !desktopCompatible { return "Compatibility needs attention" }
-        if !desktopAvailable { return "Waiting for the Mac app" }
+        if !desktopAvailable { return "Waiting for the Mac App" }
         if !networkAvailable { return "Waiting for the network" }
         return "Bridge needs attention"
     }
@@ -82,7 +82,7 @@ struct BridgeSnapshot: Decodable, Sendable {
 
     static var preview: BridgeSnapshot {
         try! JSONDecoder().decode(BridgeSnapshot.self, from: Data("""
-        {"installed":true,"running":true,"launchAtLogin":true,"bridgeVersion":"0.2.7","previousVersion":"0.2.6","state":"ready","message":"Your Mac connection is available. Open Even Terminal on your phone or glasses to continue.","action":"No action needed.","desktopCompatible":true,"desktopAvailable":true,"networkAvailable":true,"safeToChange":true,"canChangePreferences":true,"canRollback":true,"supportPath":"","checkedAt":"2026-09-21T12:00:00Z"}
+        {"installed":true,"running":true,"launchAtLogin":true,"bridgeVersion":"0.2.7","previousVersion":"0.2.6","state":"ready","message":"Your Mac App connection is available. Open Even Terminal on your phone or glasses to continue.","action":"No action needed.","desktopCompatible":true,"desktopAvailable":true,"networkAvailable":true,"safeToChange":true,"canChangePreferences":true,"canRollback":true,"supportPath":"","checkedAt":"2026-09-21T12:00:00Z"}
         """.utf8))
     }
 }
