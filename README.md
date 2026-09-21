@@ -125,10 +125,13 @@ send a prompt through the live service. Use the reviewed Node version.
 | Components and local folders | [Architecture](docs/architecture.md) |
 | Builds and tests | [Development](docs/development.md) |
 | Updates, rollback, and removal | [Maintenance](docs/maintenance.md) |
+| Proposed Even Hub guide companion | [Listing and submission preparation](distribution/even-hub/README.md) |
 | Import history and validation boundaries | [Migration](docs/migration.md) |
 | Protocol, questions, and approvals | [Client contract](client-contract/README.md) |
 | Release history and dependencies | [Change log](CHANGELOG.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) |
 
 Sources live in `bridge/`, `operations/`, and `macos/`; `integration/` records the
 pinned upstream patch, `scripts/` builds and packages, `tests/` validates behavior,
-and `site/` publishes this project's GitHub Pages tutorial.
+and `site/` publishes this project's GitHub Pages tutorial. The optional
+`even-hub/` project contains a separate guide companion being prepared for Even
+Hub review; it is not required to use the Mac bridge and is not yet listed.

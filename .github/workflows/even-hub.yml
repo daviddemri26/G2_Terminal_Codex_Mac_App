@@ -1,0 +1,41 @@
+name: Verify Even Hub guide candidate
+
+on:
+  push:
+    branches: [main]
+    paths: ['even-hub/**', 'distribution/even-hub/**', '.github/workflows/even-hub.yml']
+  pull_request:
+    paths: ['even-hub/**', 'distribution/even-hub/**', '.github/workflows/even-hub.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  guide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: even-hub
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: even-hub/package-lock.json
+      - name: Restore independent locked guide dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Check navigation and build the guide
+        run: npm run check
+      - name: Create a local candidate package
+        run: |
+          mkdir -p .build
+          npm exec -- evenhub pack app.json dist -o .build/g2-bridge-guide-0.1.0.ehpk --sdk-ver 0.0.14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: g2-bridge-guide-candidate
+          path: even-hub/.build/g2-bridge-guide-0.1.0.ehpk
+          retention-days: 7
+          if-no-files-found: error

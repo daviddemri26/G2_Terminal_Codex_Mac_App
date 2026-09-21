@@ -78,6 +78,17 @@ changing its bundled `operations/` helpers.
 
 ## Live checks are separate
 
+### Optional Even Hub guide
+
+The independent `even-hub/` npm project builds a small reference companion. Its
+dependencies are locked separately and are not used by the Mac bridge, installer,
+or background service. See its [README](../even-hub/README.md) for build, simulator,
+and package commands, and [submission preparation](../distribution/even-hub/README.md)
+for the draft store listing. Do not treat its SDK phone-version floor as a new
+physical compatibility certification for the Mac bridge.
+
+### Mac bridge live checks
+
 `tests/manual/http_bridge.py` starts a private loopback test listener on port 3457
 and sends a real marker prompt into an existing task. It requires both
 `G2_BRIDGE_ALLOW_LIVE_TEST=YES` and `G2_BRIDGE_TEST_TASK_ID`. Run it only when a live
