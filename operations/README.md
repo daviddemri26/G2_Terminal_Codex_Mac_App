@@ -17,6 +17,8 @@ plist; the checked-in plist is a template, not a file to register unchanged.
 | `supervisor.py` | Supervise the bridge's own HTTP child and publish controlled operational status |
 | `manage.py` | Stage/install frozen releases, check health, roll back, and remove service registration |
 | `control.py` | Small JSON interface used by the native app for status, settings, and lifecycle controls |
+| `setup.py` | Guided fresh installation, prerequisite checks, and explicit private pairing disclosure |
+| `desktop_location.py` | Shared desktop identity/build discovery in standard application folders |
 
 ## Read-only checks
 
@@ -38,6 +40,10 @@ The controller writes JSON to stdout. Successful replies contain `ok: true` and
 `state`, `message`, `action`, `desktopCompatible`, `desktopAvailable`,
 `networkAvailable`, `safeToChange`, `canStart`, `canChangePreferences`, `canRollback`,
 `supportPath`, and `checkedAt`.
+Additional display/setup fields are `textFormatting`, `formattingSupported`,
+`canChangeFormatting`, `formattingPreferencesValid`, `networkMode`, `networkVerified`,
+and optional `pendingUpdate`. `networkVerified` describes the local Tailscale probe;
+LAN/interface modes are configured but not independently probed by the supervisor.
 Errors contain `ok: false`, a controlled `error` message, and exit status 1.
 `diagnose` adds a `diagnostics` object. Raw configuration, task content, tokens,
 and child-process output are not included.
@@ -61,6 +67,19 @@ changing the service. Preferences accept exactly a JSON object containing the
 boolean `launchAtLogin`. The saved launchd preference affects future graphical
 logins and does not start/stop the currently loaded service. Manual Start and Stop
 preserve that preference. Closing or quitting the native app has no lifecycle effect.
+
+`set-formatting --apply` accepts the complete object
+`{"showTimestamps":true,"showProgressUpdates":true,"paragraphSpacing":"original"}`
+on stdin. Spacing also accepts `compact` or `comfortable`. `reset-formatting --apply`
+restores these defaults. Preferences live in private `preferences.json`, affect
+subsequent responses/reopened history, and never change interactive requests or
+delivery records. Runtime 0.2.8 is required; old rollback versions cannot apply them.
+
+For first installation, use the guided installer described in
+[getting started](../docs/getting-started.md). `setup.py inspect` is read-only and
+returns sanitized checks. `setup.py pair --reveal` is intentionally sensitive:
+its JSON contains a private token/URL for the app to turn into a QR code. Never
+include this output in logs, screenshots, issue reports, or CI.
 
 Lifecycle mutations verify the installation/LaunchAgent owner and use the shared
 management lock. Active or uncertain deliveries block disruptive changes. Full

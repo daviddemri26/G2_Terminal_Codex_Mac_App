@@ -20,7 +20,8 @@ Even Terminal on phone/glasses
 The control window is not in the message path. It calls the bundled
 `operations/control.py` using Apple's Python interpreter. Closing the window or
 quitting the app does not stop launchd or the bridge. The control app does not send
-prompts and does not edit pairing credentials.
+prompts and does not edit pairing credentials. Its Connect page can reveal the
+existing credential as a local QR code only after an explicit button click.
 
 ## Source and build
 
@@ -45,6 +46,8 @@ and rejects links escaping that frozen package.
 | `~/Library/Application Support/EvenCodexBridge/releases/` | Installed current and previous frozen packages and manifests |
 | `…/EvenCodexBridge/operations/` | Installed supervisor and maintenance helpers |
 | `…/EvenCodexBridge/control.json` | References to current/previous releases and existing configuration |
+| `…/EvenCodexBridge/preferences.json` | Private display preferences; original formatting is the default |
+| `…/EvenCodexBridge/pending-update.json` | Result/status of an explicitly requested bounded idle update |
 | `…/EvenCodexBridge/state/` | Durable delivery state; must survive updates |
 | `…/EvenCodexBridge/run/` and `logs/` | Process locks and bounded operational logs |
 | `…/EvenCodexBridge/status.json` and `transition.json` | Latest supervised status and update/recovery record |
@@ -62,6 +65,10 @@ the configured network, checks the selected release, and starts only its HTTP
 child. It can restart that child after failure while leaving the Mac task engine
 alone. Network address changes are deferred until the bridge is idle and no
 delivery is pending. The service cannot keep the Mac awake or run before login.
+
+The reviewed network probe watches Tailscale. Existing LAN/interface modes use
+Even Terminal's own resolver; they are shown as configured rather than independently
+verified by the controller. No LAN roaming or discovery layer is added.
 
 Prompts and action replies use a durable journal to avoid duplicate submissions.
 After an uncertain acknowledgement, the bridge reconciles state instead of

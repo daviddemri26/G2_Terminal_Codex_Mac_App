@@ -71,10 +71,16 @@ def install(source, destination, apply=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=ROOT / '.build/G2 Bridge.app')
-    parser.add_argument('--destination', type=Path, default=Path.home() / 'Applications/G2 Bridge.app')
+    parser.add_argument('--destination', type=Path, default=Path('/Applications/G2 Bridge.app'),
+                        help='Default: /Applications/G2 Bridge.app. Use ~/Applications/G2 Bridge.app explicitly for a per-user installation.')
     parser.add_argument('--apply', action='store_true')
     args = parser.parse_args()
     try:
         print(json.dumps(install(args.source, args.destination, args.apply), indent=2))
+    except PermissionError:
+        raise SystemExit('Installation stopped: Applications is not writable for this account. '
+                         'Install using Finder with administrator approval, or explicitly choose '
+                         '--destination "$HOME/Applications/G2 Bridge.app" for this user only. '
+                         'The background bridge was not changed.')
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         raise SystemExit('Installation stopped: ' + str(error))

@@ -8,6 +8,7 @@ import { DesktopIpcClient, canonicalTurns, readableHistory, conversationStatus, 
 import { DeliveryStore } from './delivery-store.mjs';
 import { buildActionPresentation, decodeActionReply, progressMessage, clearProgressMessage } from './client-contract.mjs';
 import { publicActivityHeading, publicToolLabel, turnElapsedMs, formatElapsed, messageTimeLabel } from './activity.mjs';
+import { DEFAULT_TEXT_FORMATTING, readTextFormatting, validateTextFormatting, formatAssistantText, streamAssistantText } from './text-formatting.mjs';
 
 const exec = promisify(execFile);
 const catalogScript = join(dirname(fileURLToPath(import.meta.url)), 'catalog.py');
@@ -22,6 +23,16 @@ const working = (state, turn) => {
 };
 const textInput = input => (input ?? []).filter(x => x.type === 'text').map(x => x.text ?? '').join('\n');
 const codedError = (message, statusCode = 503) => Object.assign(new Error(message), { statusCode });
+const appendFormattedText = (rendered, previous) => {
+  if (rendered.startsWith(previous)) return rendered.slice(previous.length);
+  // A message thought complete may later gain text after a trailing paragraph
+  // gap. Keep the already visible spacing and deliver the new words once.
+  const prefix = previous.replace(/[ \t\r\n]+$/, '');
+  if (prefix && prefix !== previous && rendered.startsWith(prefix)) {
+    return rendered.slice(prefix.length).replace(/^[ \t\r\n]+/, '');
+  }
+  return '';
+};
 const displayUserText = text => {
   const answers = parseAsyncQuestionReply(text);
   if (answers) return answers.map(answer => `${answer.question}\n${answer.answer}`).join('\n\n');
@@ -39,6 +50,10 @@ export function createDesktopProvider(emit, options = {}) {
   catch (error) { storageError = error; }
   const sessions = new Map(), starting = new Set(), actionSending = new Set(), refreshing = new Set();
   const now = options.now ?? Date.now;
+  const readFormatting = () => {
+    try { return validateTextFormatting((options.readTextFormatting ?? readTextFormatting)()); }
+    catch { return { ...DEFAULT_TEXT_FORMATTING }; }
+  };
   let catalogCache = [], catalogAt = 0, catalogPromise, checkedBuildAt = 0, checkingBuild, closed = false;
   const send = (id, message) => emit(id, { ...message, sessionId: id, provider: 'codex' });
   const safeMessage = error => error.outcomeUnknown
@@ -62,23 +77,31 @@ export function createDesktopProvider(emit, options = {}) {
     send(id, clearProgressMessage());
     local.thinking = false; local.progress = ''; local.finalTextOpen = false;
   }
-  function emitCommentary(id, record) {
+  function emitCommentary(id, record, complete = false) {
     if (!record || record.text === record.sentText || !record.text) return;
     const local = sessions.get(id);
-    const body = record.text.startsWith(record.sentText) ? record.text.slice(record.sentText.length) : record.text;
+    if (!local.formatting.showProgressUpdates) { record.sentText = record.text; return; }
+    const rendered = streamAssistantText(record.text, local.formatting, complete);
+    const previous = record.renderedText ?? '';
+    // A native replacement cannot retract text already displayed by the client.
+    const body = local.formatting.paragraphSpacing === 'original'
+      ? (rendered.startsWith(previous) ? rendered.slice(previous.length) : rendered)
+      : appendFormattedText(rendered, previous);
     if (!body) return;
     const toolId = `bridge-commentary:${local.turnKey}:${record.id}:${record.segment++}`;
     // Keep the dim native style: the timestamp and full prose share a line.
     // The client owns its tool prefix and joining punctuation.
     send(id, { type: 'tool_start', toolId, name: record.name, bridgePublicUpdate: true });
     send(id, { type: 'tool_end', toolId, name: record.name, summary: body, detail: { output: body }, bridgePublicUpdate: true });
-    record.sentText = record.text;
+    record.renderedText = rendered;
+    if (complete || local.formatting.paragraphSpacing === 'original') record.sentText = record.text;
   }
   function closeCommentary(id) {
-    for (const record of sessions.get(id)?.commentaryTexts?.values() ?? []) emitCommentary(id, record);
+    for (const record of sessions.get(id)?.commentaryTexts?.values() ?? []) emitCommentary(id, record, true);
   }
-  function messageHeader(id, turn, itemId, final = false, capture = false) {
+  function messageHeader(id, turn, itemId, final = false, capture = false, preferences) {
     const local = sessions.get(id);
+    if (!(preferences ?? local.formatting).showTimestamps) return '';
     const key = JSON.stringify([turn?.turnId ?? local.turnKey, final ? 'final' : itemId]);
     if (local.messageHeaders.has(key)) return local.messageHeaders.get(key);
     // Prefer native item timing. Otherwise capture live receipt time once;
@@ -108,6 +131,7 @@ export function createDesktopProvider(emit, options = {}) {
       if (!record) {
         const historical = initial && item !== commentary.at(-1);
         record = { id: item.id, text: item.text, sentText: historical ? item.text : '',
+          renderedText: historical ? formatAssistantText(item.text, local.formatting) : '',
           changedAt: now(), segment: 0, name: messageHeader(id, turn, item.id, false, !historical).trimEnd() };
         local.commentaryTexts.set(item.id, record);
       } else if (record.text !== item.text) {
@@ -115,7 +139,7 @@ export function createDesktopProvider(emit, options = {}) {
       }
       // The next native item marks the paragraph boundary. A short quiet-time
       // fallback handles a final progress paragraph while work waits elsewhere.
-      if (terminal(turn.status) || item !== turn.items?.at(-1)) emitCommentary(id, record);
+      if (terminal(turn.status) || item !== turn.items?.at(-1)) emitCommentary(id, record, true);
     }
   }
   function sendRunningStats(id, force = false) {
@@ -124,7 +148,7 @@ export function createDesktopProvider(emit, options = {}) {
     if (!force && now() - (local.lastStatsAt ?? -Infinity) < (options.statsIntervalMs ?? 10000)) return;
     const durationMs = turnElapsedMs(turn, { now: now(), fallbackStartedAtMs: local.startedAt });
     send(id, { type: 'running_stats', durationMs, inputTokens: turn.usage?.inputTokens ?? 0, outputTokens: turn.usage?.outputTokens ?? 0 });
-    if (local.progress) send(id, progressMessage(`${formatElapsed(durationMs)} · ${local.progress}`));
+    if (local.progress && local.formatting.showProgressUpdates) send(id, progressMessage(`${formatElapsed(durationMs)} · ${local.progress}`));
     local.lastStatsAt = now();
   }
   function syncTerminalDisplay(id, state, force = false) {
@@ -232,6 +256,7 @@ export function createDesktopProvider(emit, options = {}) {
     if (key && key !== local.turnKey) {
       if (local.ready) endActivity(id);
       local.turnKey = key; local.texts = new Map(); local.finished = false;
+      local.formatting = readFormatting(); local.renderedTexts = new Map();
       local.startedAt = now(); local.progress = ''; local.thinking = false;
       local.commentaryTexts = new Map(); local.lastStatsAt = undefined;
       local.finalLabelSent = false; local.finalTextOpen = false;
@@ -248,7 +273,10 @@ export function createDesktopProvider(emit, options = {}) {
     const done = turn && terminal(turn.status);
     let finishedNow = false;
     if (initial && (done || status === 'idle')) {
-      for (const item of finals) local.texts.set(item.id, item.text);
+      for (const item of finals) {
+        local.texts.set(item.id, item.text);
+        local.renderedTexts.set(item.id, formatAssistantText(item.text, local.formatting));
+      }
       local.finished = true;
     } else {
       // Public commentary is ordinary visible assistant text in the Mac app.
@@ -258,19 +286,22 @@ export function createDesktopProvider(emit, options = {}) {
       const heading = items.map(publicActivityHeading).filter(Boolean).at(-1);
       const progress = done ? '' : heading || commentary || (activeTool ? publicToolLabel(activeTool) : status === 'busy' ? 'Working…' : '');
       if (progress !== local.progress) {
-        send(id, progress ? progressMessage(`${formatElapsed(turnElapsedMs(turn, { now: now(), fallbackStartedAtMs: local.startedAt }))} · ${progress}`) : clearProgressMessage()); local.progress = progress;
+        if (!progress || local.formatting.showProgressUpdates) send(id, progress ? progressMessage(`${formatElapsed(turnElapsedMs(turn, { now: now(), fallbackStartedAtMs: local.startedAt }))} · ${progress}`) : clearProgressMessage()); local.progress = progress;
       }
       const thinking = !done && items.at(-1)?.type === 'reasoning';
       if (thinking !== local.thinking) { send(id, { type: 'status', state: thinking ? 'think_start' : 'think_end' }); local.thinking = thinking; }
       for (const item of finals) {
         const previous = local.texts.get(item.id) ?? '';
-        if (item.text.startsWith(previous) && item.text.length > previous.length) {
+        const displayed = local.formatting.paragraphSpacing === 'original' ? previous : (local.renderedTexts.get(item.id) ?? '');
+        const rendered = streamAssistantText(item.text, local.formatting, done);
+        if (item.text.startsWith(previous) && rendered.startsWith(displayed) && rendered.length > displayed.length) {
           closeCommentary(id);
           if (!local.finalTextOpen) { send(id, { type: 'status', state: 'text_start' }); local.finalTextOpen = true; }
           if (!local.finalLabelSent) {
             send(id, { type: 'text_delta', text: messageHeader(id, turn, item.id, true, true), bridgeFinalHeader: true }); local.finalLabelSent = true;
           }
-          send(id, { type: 'text_delta', text: item.text.slice(previous.length) });
+          send(id, { type: 'text_delta', text: rendered.slice(displayed.length) });
+          local.renderedTexts.set(item.id, rendered);
         }
         local.texts.set(item.id, item.text);
       }
@@ -279,7 +310,7 @@ export function createDesktopProvider(emit, options = {}) {
         const failure = turn.error?.message ?? (turn.status === 'interrupted' ? 'Stopped by user.' : 'Codex could not complete this response.');
         if (turn.status === 'failed') send(id, { type: 'error', message: failure });
         send(id, { type: 'result', success: turn.status === 'completed',
-          text: finals.map(i => i.text).join('\n\n') || (turn.status === 'completed' ? '' : failure),
+          text: formatAssistantText(finals.map(i => i.text).join('\n\n'), local.formatting) || (turn.status === 'completed' ? '' : failure),
           durationMs: turnElapsedMs(turn, { now: now(), fallbackStartedAtMs: local.startedAt })
             ?? turnElapsedMs({ ...turn, status: 'inProgress' }, { now: now(), fallbackStartedAtMs: local.startedAt }), turns: 1,
           costUsd: 0, inputTokens: turn.usage?.inputTokens ?? 0, outputTokens: turn.usage?.outputTokens ?? 0 });
@@ -318,7 +349,8 @@ export function createDesktopProvider(emit, options = {}) {
     let local = sessions.get(id);
     if (!local) {
       local = { ready: false, turnKey: null, texts: new Map(), status: 'idle', detail: 'Connecting to Mac', lastAccess: Date.now(), lastSeen: 0,
-        questionLabels: new Map(), shownAnswers: new Set(), messageHeaders: new Map() };
+        questionLabels: new Map(), shownAnswers: new Set(), messageHeaders: new Map(),
+        formatting: readFormatting(), renderedTexts: new Map() };
       sessions.set(id, local);
     }
     local.lastAccess = Date.now(); await client.follow(id);
@@ -411,15 +443,18 @@ export function createDesktopProvider(emit, options = {}) {
       }));
     },
     async getSessionStatus(id) { return sessions.get(id)?.status ?? 'idle'; },
-    async getInfo() { return { account: {}, model: 'Codex — Mac app', version: 'G2 Desktop Bridge 0.2.7', provider: 'codex' }; },
+    async getInfo() { return { account: {}, model: 'Codex — Mac app', version: 'G2 Desktop Bridge 0.2.8', provider: 'codex' }; },
     async getHistory(id, limit = 10) {
       const state = await watch(id);
       const turns = canonicalTurns(state);
       const questions = new Set(turns.flatMap(turn => (turn.items ?? []).filter(item => item.questions?.length).map(item => item.id)));
       const byTurn = new Map(turns.map(turn => [turn.turnId, turn]));
+      const formatting = terminal(turns.at(-1)?.status) ? readFormatting() : sessions.get(id).formatting;
       return readableHistory(state, 1000).filter(m => !questions.has(m.itemId))
+        .filter(m => formatting.showProgressUpdates || m.role !== 'assistant' || m.phase !== 'commentary')
         .map(m => m.role === 'user' ? { ...m, text: displayUserText(m.text) }
-          : { ...m, text: messageHeader(id, byTurn.get(m.turnId), m.itemId, m.phase !== 'commentary') + m.text }).slice(-Math.max(1, limit));
+          : { ...m, text: messageHeader(id, byTurn.get(m.turnId), m.itemId, m.phase !== 'commentary', false, formatting)
+            + formatAssistantText(m.text, formatting) }).slice(-Math.max(1, limit));
     },
     async watch(id) { try { return await watch(id, { reshowAction: true }); } catch (error) { report(id, error); throw error; } },
     async prompt(id, text) {

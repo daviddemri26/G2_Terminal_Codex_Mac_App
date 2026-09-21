@@ -1,6 +1,29 @@
 import Foundation
 import Darwin
 
+struct TextFormatting: Codable, Sendable, Equatable {
+    var showTimestamps = true
+    var showProgressUpdates = true
+    var paragraphSpacing = "original"
+    static let original = TextFormatting()
+
+    var sampleText: String {
+        let prefix = showTimestamps ? "10:30 · " : ""
+        let gap = paragraphSpacing == "compact" ? "\n" : paragraphSpacing == "comfortable" ? "\n\n\n" : "\n\n"
+        return prefix + "Your conversation is ready." + gap + "You can continue from your glasses."
+    }
+}
+
+struct PairingDetails: Decodable, Sendable {
+    let url: String
+    let serverURL: String
+}
+
+struct PendingUpdate: Decodable, Sendable {
+    let state: String
+    let targetVersion: String?
+}
+
 struct BridgeSnapshot: Decodable, Sendable {
     let installed: Bool
     let running: Bool
@@ -13,9 +36,15 @@ struct BridgeSnapshot: Decodable, Sendable {
     let desktopCompatible: Bool
     let desktopAvailable: Bool
     let networkAvailable: Bool
+    let networkMode: String?
+    let networkVerified: Bool?
     let safeToChange: Bool
     let canStart: Bool?
     let canChangePreferences: Bool?
+    let canChangeFormatting: Bool?
+    let formattingSupported: Bool?
+    let textFormatting: TextFormatting?
+    let pendingUpdate: PendingUpdate?
     let canRollback: Bool
     let supportPath: String
     let checkedAt: String

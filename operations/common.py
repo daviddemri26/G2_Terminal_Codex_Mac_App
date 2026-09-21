@@ -12,6 +12,7 @@ import subprocess
 import tempfile
 import time
 import urllib.request
+from desktop_location import desktop_build as installed_desktop_build
 
 LABEL = 'com.evencodex.desktop-bridge'
 DEFAULT_SUPPORT = Path.home() / 'Library/Application Support/EvenCodexBridge'
@@ -146,8 +147,34 @@ def port_available(port):
 
 
 def command_output(arguments, timeout=5):
+    environment = command_environment()
+    if str(arguments[0]) == str(tailscale_executable()):
+        environment['TAILSCALE_BE_CLI'] = '1'
     return subprocess.check_output(arguments, stderr=subprocess.DEVNULL, text=True,
-                                   timeout=timeout, env=command_environment()).strip()
+                                   timeout=timeout, env=environment).strip()
+
+
+def tailscale_executable(launchers=None, applications=None):
+    """Find an installed CLI without adding a global launcher or changing its VPN."""
+    if launchers is None:
+        launchers = (Path('/usr/local/bin/tailscale'), Path('/opt/homebrew/bin/tailscale'))
+    if applications is None:
+        applications = (Path('/Applications'), Path.home() / 'Applications')
+    for path in launchers:
+        if path.is_file() and os.access(path, os.X_OK):
+            return path
+    for directory in applications:
+        app = directory / 'Tailscale.app'
+        try:
+            info = plistlib.loads((app / 'Contents/Info.plist').read_bytes())
+            if info.get('CFBundleIdentifier') not in ('io.tailscale.ipn.macos', 'io.tailscale.ipn.macsys'):
+                continue
+            executable = app / 'Contents/MacOS/Tailscale'
+            if executable.is_file() and os.access(executable, os.X_OK):
+                return executable
+        except (OSError, plistlib.InvalidFileException, ValueError):
+            pass
+    return None
 
 
 def command_environment():
@@ -159,11 +186,7 @@ def command_environment():
 
 
 def desktop_build():
-    try:
-        data = plistlib.loads(APP_INFO.read_bytes())
-        return {key: data.get(key) for key in EXPECTED_BUILD}
-    except (OSError, plistlib.InvalidFileException):
-        return None
+    return installed_desktop_build()
 
 
 def validate_release(support, reference, node_check=True):
@@ -204,7 +227,15 @@ def child_environment(support):
     # Do not inherit overrides that can change tokens, engines, permissions, or Node startup.
     env = command_environment()
     env.update(PATH=RUNTIME_PATH, EVEN_CODEX_DESKTOP_BRIDGE='1',
-               EVEN_CODEX_BRIDGE_STATE_DIR=str(Path(support) / 'state'))
+               EVEN_CODEX_BRIDGE_STATE_DIR=str(Path(support) / 'state'),
+               EVEN_CODEX_BRIDGE_PREFERENCES_PATH=str(Path(support) / 'preferences.json'))
+    executable = tailscale_executable()
+    if executable:
+        # The upstream resolver invokes `tailscale` by name. The managed shim
+        # forwards only to this discovered executable, including an app-bundled
+        # CLI when no global launcher was installed.
+        env['PATH'] = str(Path(support) / 'operations') + ':' + RUNTIME_PATH
+        env['G2_TAILSCALE_EXECUTABLE'] = str(executable)
     return env
 
 

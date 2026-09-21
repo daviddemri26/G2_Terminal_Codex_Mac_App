@@ -20,6 +20,8 @@ class BuildTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         for name in ('bridge', 'integration'):
             shutil.copytree(ROOT / name, self.root / name)
+        (self.root / 'operations').mkdir()
+        shutil.copy2(ROOT / 'operations/desktop_location.py', self.root / 'operations/desktop_location.py')
         (self.root / 'scripts').mkdir()
         shutil.copy2(ROOT / 'scripts/build-runtime.py', self.root / 'scripts/build-runtime.py')
         for name in ('package-lock.json', 'compatibility.json'):
@@ -47,7 +49,8 @@ class BuildTests(unittest.TestCase):
                     path = second / 'dist/desktop-bridge' / Path(relative).name
                     self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), expected, relative)
         for path in (second / 'dist/desktop-bridge').iterdir():
-            self.assertEqual(path.read_bytes(), (self.root / 'bridge' / path.name).read_bytes())
+            folder = 'operations' if path.name == 'desktop_location.py' else 'bridge'
+            self.assertEqual(path.read_bytes(), (self.root / folder / path.name).read_bytes())
         self.assertFalse(any('.test.' in p.name for p in (second / 'dist/desktop-bridge').iterdir()))
 
     def test_modified_or_injected_vendor_is_rejected_before_output(self):

@@ -1,0 +1,15 @@
+{
+  "version": "v26.9.0",
+  "source": "https://nodejs.org/dist/v26.9.0/SHASUMS256.txt",
+  "verifiedOn": "2026-09-21",
+  "archives": {
+    "arm64": {
+      "name": "node-v26.9.0-darwin-arm64.tar.gz",
+      "sha256": "6f3de7ed853ee283b4bf24b6e426618f1d357401ce5815db1866eb85eb4b05d9"
+    },
+    "x86_64": {
+      "name": "node-v26.9.0-darwin-x64.tar.gz",
+      "sha256": "06b2e742ed9025dc84adc830243b3f731956eac9c321bccd0ede384209af02a8"
+    }
+  }
+}

@@ -378,6 +378,100 @@ class ControlTests(unittest.TestCase):
             with self.subTest(data=data[:60]), self.assertRaises(common.BridgeError):
                 control.read_preferences(io.BytesIO(data))
 
+    def activate_formatting_release(self):
+        (self.source / 'dist/desktop-bridge/provider.mjs').write_text("version: 'G2 Desktop Bridge 0.2.8'")
+        self.record['activeRelease'] = manage.prepare_release(self.source, self.support, '/test/node')
+        common.atomic_json(self.support / 'control.json', self.record)
+
+    def test_old_release_reports_default_settings_but_cannot_save_unsupported_formatting(self):
+        result = control.status(self.support)
+        self.assertFalse(result['formattingSupported'])
+        self.assertFalse(result['canChangeFormatting'])
+        self.assertEqual(result['textFormatting'], control.DEFAULT_TEXT_FORMATTING)
+        with self.assertRaisesRegex(common.BridgeError, 'Install a bridge release'):
+            control.mutate('set-formatting', self.support, dict(control.DEFAULT_TEXT_FORMATTING))
+        self.assertFalse((self.support / 'preferences.json').exists())
+        self.assertEqual(self.mutations(), [])
+
+    def test_formatting_saves_atomically_while_busy_and_preserves_pairing_journal_and_release(self):
+        self.activate_formatting_release()
+        self.busy = True
+        self.pending()
+        before = {name: common.digest(path) for name, path in {
+            'config': self.config_path, 'journal': self.support / 'state/delivery.json',
+            'control': self.support / 'control.json', 'plist': self.launch_path}.items()}
+        custom = {'showTimestamps': False, 'showProgressUpdates': False, 'paragraphSpacing': 'compact'}
+        control.mutate('set-formatting', self.support, custom)
+        record = common.read_json(self.support / 'preferences.json')
+        self.assertEqual(record, {'format': 1, 'textFormatting': custom})
+        self.assertEqual((self.support / 'preferences.json').stat().st_mode & 0o777, 0o600)
+        result = control.status(self.support)
+        self.assertTrue(result['formattingSupported'])
+        self.assertTrue(result['canChangeFormatting'])
+        self.assertEqual(result['textFormatting'], custom)
+        after = {name: common.digest(path) for name, path in {
+            'config': self.config_path, 'journal': self.support / 'state/delivery.json',
+            'control': self.support / 'control.json', 'plist': self.launch_path}.items()}
+        self.assertEqual(before, after)
+        self.assertTrue(self.registered)
+        self.assertTrue(self.listener)
+        self.assertEqual(self.mutations(), [])
+
+    def test_invalid_formatting_is_rejected_without_touching_saved_preferences(self):
+        self.activate_formatting_release()
+        control.mutate('reset-formatting', self.support)
+        before = common.digest(self.support / 'preferences.json')
+        for value in ({}, [], {**control.DEFAULT_TEXT_FORMATTING, 'token': SECRET},
+                      {**control.DEFAULT_TEXT_FORMATTING, 'showTimestamps': 1},
+                      {**control.DEFAULT_TEXT_FORMATTING, 'paragraphSpacing': 'wide'}):
+            with self.subTest(value=value), self.assertRaises(common.BridgeError):
+                control.mutate('set-formatting', self.support, value)
+        self.assertEqual(before, common.digest(self.support / 'preferences.json'))
+        self.assertEqual(self.mutations(), [])
+
+    def test_corrupt_formatting_uses_defaults_and_reset_repairs_only_preferences(self):
+        self.activate_formatting_release()
+        path = self.support / 'preferences.json'
+        path.write_text(SECRET)
+        result = control.status(self.support)
+        self.assertFalse(result['formattingPreferencesValid'])
+        self.assertTrue(result['canChangeFormatting'])
+        self.assertEqual(result['textFormatting'], control.DEFAULT_TEXT_FORMATTING)
+        self.assertNotIn(SECRET, json.dumps(result))
+        control.mutate('reset-formatting', self.support)
+        self.assertTrue(control.status(self.support)['formattingPreferencesValid'])
+
+    def test_formatting_file_links_and_unsafe_permissions_are_not_written(self):
+        self.activate_formatting_release()
+        path = self.support / 'preferences.json'
+        path.symlink_to(self.config_path)
+        before = common.digest(self.config_path)
+        with self.assertRaises(common.BridgeError):
+            control.mutate('reset-formatting', self.support)
+        self.assertEqual(before, common.digest(self.config_path))
+        path.unlink()
+        path.write_text('{}')
+        path.chmod(0o666)
+        with self.assertRaises(common.BridgeError):
+            control.mutate('reset-formatting', self.support)
+
+    def test_formatting_input_is_bounded_strict_and_separate_from_login_preference(self):
+        self.assertEqual(control.read_formatting(io.BytesIO(json.dumps(control.DEFAULT_TEXT_FORMATTING).encode())),
+                         control.DEFAULT_TEXT_FORMATTING)
+        for data in (b'{"launchAtLogin":true}', b'null', b'[]', b'{}', b'not JSON', b' ' * 4097):
+            with self.subTest(data=data[:60]), self.assertRaises(common.BridgeError):
+                control.read_formatting(io.BytesIO(data))
+
+    def test_non_tailscale_network_status_never_claims_a_verified_connection(self):
+        for mode in ('lan', 'interface', 'expose', 'unsupported'):
+            common.atomic_json(self.config_path, {'token': SECRET, 'network': {'mode': mode}})
+            result = control.status(self.support)
+            self.assertEqual(result['networkMode'], mode if mode != 'unsupported' else 'unknown')
+            self.assertFalse(result['networkVerified'])
+            self.assertNotIn(SECRET, json.dumps(result))
+        common.atomic_json(self.config_path, {'token': SECRET, 'network': {'mode': 'tailscale'}})
+        self.assertTrue(control.status(self.support)['networkVerified'])
+
     def test_cli_requires_apply_and_returns_only_safe_json(self):
         stream = io.StringIO()
         with redirect_stdout(stream):

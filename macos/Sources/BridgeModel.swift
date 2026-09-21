@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import CoreImage.CIFilterBuiltins
 
 @MainActor
 final class BridgeModel: ObservableObject {
@@ -11,6 +12,7 @@ final class BridgeModel: ObservableObject {
     @Published private(set) var notice: String?
     @Published private(set) var diagnostics: String?
     @Published private(set) var lastRefresh: Date?
+    @Published var pairingImage: NSImage?
     private var pollTask: Task<Void, Never>?
     let preview: Bool
 
@@ -32,6 +34,60 @@ final class BridgeModel: ObservableObject {
     var canStart: Bool {
         !preview && busyAction == nil && statusError == nil && !isRefreshing
             && snapshot?.installed == true && snapshot?.running == false && snapshot?.canStart == true
+    }
+
+    var canChangeFormatting: Bool {
+        !preview && busyAction == nil && statusError == nil && !isRefreshing
+            && snapshot?.canChangeFormatting == true
+    }
+
+    func saveFormatting(_ formatting: TextFormatting) {
+        guard canChangeFormatting else { return }
+        busyAction = "set-formatting"
+        notice = nil
+        Task {
+            do {
+                let input = try JSONEncoder().encode(formatting)
+                let result = try await execute("set-formatting", apply: true, input: input, timeout: 15)
+                snapshot = try result.snapshot()
+                statusError = nil
+                lastRefresh = Date()
+                notice = "Text settings saved. They apply to the next response or a reopened conversation."
+            } catch { operationError = error.localizedDescription }
+            busyAction = nil
+            await refresh()
+        }
+    }
+
+    func openGuide() {
+        NSWorkspace.shared.open(URL(string: "https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/")!)
+    }
+
+    func showPairing() {
+        guard !preview, busyAction == nil, snapshot?.installed == true,
+              snapshot?.running == true, snapshot?.networkAvailable == true else { return }
+        busyAction = "pair"
+        Task {
+            defer { busyAction = nil }
+            do {
+                guard let resources = Bundle.main.resourceURL else { throw ControlFailure.message("The app’s setup files are missing.") }
+                let result = try await CommandRunner.run(executable: URL(fileURLWithPath: "/usr/bin/python3"),
+                    arguments: [resources.appendingPathComponent("operations/setup.py").path, "pair", "--reveal"], timeout: 15)
+                guard result.exitCode == 0 else { throw ControlFailure.message("Pairing is not available yet. Check the bridge and Tailscale connection, then try again.") }
+                let pair = try JSONDecoder().decode(PairingDetails.self, from: result.stdout)
+                guard let url = URLComponents(string: pair.url), url.scheme == "http", url.host != nil else {
+                    throw ControlFailure.message("The local pairing information could not be read.")
+                }
+                let filter = CIFilter.qrCodeGenerator()
+                filter.message = Data(pair.url.utf8)
+                filter.correctionLevel = "M"
+                guard let output = filter.outputImage?.transformed(by: CGAffineTransform(scaleX: 8, y: 8)),
+                      let cgImage = CIContext().createCGImage(output, from: output.extent) else {
+                    throw ControlFailure.message("The pairing code could not be created.")
+                }
+                pairingImage = NSImage(cgImage: cgImage, size: NSSize(width: 260, height: 260))
+            } catch { operationError = "Pairing is not available. Check your installation and private network, then try again." }
+        }
     }
 
     func startObserving() {

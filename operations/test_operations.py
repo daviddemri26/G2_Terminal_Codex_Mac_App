@@ -177,7 +177,7 @@ class OperationsTests(unittest.TestCase):
         for version in manage.VERSIONS:
             provider.write_text("version: '" + version + "'")
             self.assertEqual(manage.source_version(self.source), version)
-        self.assertEqual(manage.INSTALL_VERSION, 'G2 Desktop Bridge 0.2.7')
+        self.assertEqual(manage.INSTALL_VERSION, 'G2 Desktop Bridge 0.2.8')
         for version in ('0.2.10', '0.2.20', '0.2.30', '0.2.40', '0.2.50', '0.2.60', '0.2.70', '0.2.3-beta', '0.2.4-beta', '0.2.5-beta', '0.2.6-beta', '0.2.7-beta'):
             provider.write_text("version: 'G2 Desktop Bridge " + version + "'")
             with self.assertRaises(common.BridgeError):
@@ -200,7 +200,7 @@ class OperationsTests(unittest.TestCase):
             'G2 Desktop Bridge 0.2.2', 'G2 Desktop Bridge 0.2.3', 'G2 Desktop Bridge 0.2.4',
             'G2 Desktop Bridge 0.2.5',
             'G2 Desktop Bridge 0.2.6',
-            'G2 Desktop Bridge 0.2.7',
+            'G2 Desktop Bridge 0.2.7', 'G2 Desktop Bridge 0.2.8',
         })
         self.assertIn(manage.INSTALL_VERSION, manage.VERSIONS)
 

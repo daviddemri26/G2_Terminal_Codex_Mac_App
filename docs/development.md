@@ -69,7 +69,8 @@ python3 scripts/install-app.py
 python3 scripts/install-app.py --apply
 ```
 
-The default destination is `~/Applications/G2 Bridge.app`. The installer checks
+The default destination is `/Applications/G2 Bridge.app`. Use
+`--destination "$HOME/Applications/G2 Bridge.app"` for an explicit per-user installation. The installer checks
 bundle identity and signature, refuses to replace the app while its window
 process is running, and saves the previous app separately when replacing it.
 It does not change the background bridge. Rebuild/reinstall the control app after

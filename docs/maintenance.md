@@ -79,7 +79,7 @@ rewrite the saved launch-at-login preference. Rollback exchanges current and
 previous release references after verifying the previous runtime; it never falls
 back to an unpatched global npm provider.
 
-The sole configurable preference is passed as JSON on standard input:
+The launch preference is passed as JSON on standard input:
 
 ```sh
 printf '%s\n' '{"launchAtLogin":true}' | python3 operations/control.py set-preferences --apply
@@ -89,6 +89,26 @@ This changes launchd's saved login preference. Use Start or Stop for an immediat
 service change. All control mutations require `--apply`; omitting it returns an
 error without changing the service. The native app supplies it for explicit button
 actions. The separate `manage.py` installer supports a non-mutating plan.
+
+Text preferences are separate display settings. They do not restart the service,
+change permissions, or edit the delivery journal:
+
+```sh
+printf '%s\n' '{"showTimestamps":true,"showProgressUpdates":true,"paragraphSpacing":"original"}' | python3 operations/control.py set-formatting --apply
+python3 operations/control.py reset-formatting --apply
+```
+
+For an authorized update while a conversation is active, a bounded worker can wait
+for three consecutive idle observations before invoking the normal guarded manager:
+
+```sh
+python3 scripts/install-when-idle.py --source "$PWD/.build/runtime" --apply
+```
+
+This waits at most 20 minutes by default. It cancels if the installed release or
+candidate changes, never forces a restart, and never retries an uncertain install.
+Its local result is in `pending-update.json` under Application Support. This is a
+single explicitly requested update, not an online update feed.
 
 ## Recovery after an update
 

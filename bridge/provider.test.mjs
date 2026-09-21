@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createDesktopProvider } from './provider.mjs';
 import { DeliveryStore } from './delivery-store.mjs';
+import { DEFAULT_TEXT_FORMATTING } from './text-formatting.mjs';
 
 const id = '11111111-1111-4111-8111-111111111111';
 function state(status = 'completed', text = 'Previous answer', turnId = 'old') {
@@ -45,6 +46,7 @@ function setup(options = {}) {
   const events = [];
   const provider = createDesktopProvider((thread, message) => events.push({ thread, ...message }), {
     client, store: options.store ?? new DeliveryStore(), skipBuildGuard: true, catalog: async () => [{ id, title: 'Desktop task', cwd: '/test', updated_at: 1 }],
+    readTextFormatting: options.readTextFormatting ?? (() => ({ ...DEFAULT_TEXT_FORMATTING })),
     ...(options.commentarySettleMs ? { commentarySettleMs: options.commentarySettleMs } : {}), ...(options.now ? { now: options.now } : {}), ...(options.statsIntervalMs ? { statsIntervalMs: options.statsIntervalMs } : {}),
   });
   return { provider, client, events };
@@ -757,5 +759,106 @@ test('joining active work does not assign current time to older skipped commenta
     const history = await provider.getHistory(id, 10);
     assert.ok(history.some(e => e.text === 'An older update.'));
     assert.ok(history.some(e => e.text === '[6m40] The current update.'));
+  } finally { await provider.close(); }
+});
+
+test('display settings hide only assistant timestamps and public progress, preserving final and input', async () => {
+  const formatting = { showTimestamps: false, showProgressUpdates: false, paragraphSpacing: 'original' };
+  const { provider, client, events } = setup({ readTextFormatting: () => formatting });
+  try {
+    const prompt = '**Exact**\n\nUser input';
+    await provider.prompt(id, prompt);
+    assert.equal(client.starts[0].text, prompt);
+    client.current.turns[0].params.input = [{ type: 'text', text: prompt }];
+    client.current.turns[0].items.push({ id: 'update', type: 'agentMessage', phase: 'commentary', text: 'Working\n\ncarefully.' });
+    client.emit('state', id, client.current);
+    client.current.turns[0].items[0].text = '**Exact** final\n\nanswer.';
+    client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current);
+    assert.equal(events.some(event => event.type === 'tool_start' || event.type === 'tool_end'), false);
+    assert.equal(events.some(event => event.type === 'task_progress' && event.current), false);
+    assert.equal(events.filter(event => event.type === 'text_delta').map(event => event.text).join(''), '**Exact** final\n\nanswer.');
+    const history = await provider.getHistory(id, 20);
+    assert.equal(history.some(message => message.text.includes('carefully.')), false);
+    assert.ok(history.some(message => message.text === '**Exact** final\n\nanswer.'));
+    assert.ok(history.some(message => message.role === 'user' && message.text === prompt));
+  } finally { await provider.close(); }
+});
+
+test('formatting changes apply at turn boundaries without replaying a current response or changing delivery', async () => {
+  let formatting = { ...DEFAULT_TEXT_FORMATTING };
+  const { provider, client, events } = setup({ readTextFormatting: () => formatting });
+  try {
+    await provider.prompt(id, 'Start');
+    client.current.turns[0].items[0].text = 'First.\n\n';
+    client.emit('state', id, client.current);
+    formatting = { ...formatting, showTimestamps: false, paragraphSpacing: 'compact' };
+    client.current.turns[0].items[0].text += 'Second.';
+    client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current);
+    assert.equal(events.filter(event => event.type === 'text_delta').map(event => event.text).join(''), '[0m00]\n\nFirst.\n\nSecond.');
+    const history = await provider.getHistory(id, 20);
+    assert.ok(history.some(message => message.text === 'First.\nSecond.'));
+    assert.equal(events.filter(event => event.type === 'result').length, 1);
+    events.length = 0;
+    client.current = state('inProgress', '', 'next'); client.emit('state', id, client.current);
+    for (const text of ['First.', 'First.\n\nSec', 'First.\n\nSecond.\nThird.']) {
+      client.current.turns[0].items[0].text = text; client.emit('state', id, client.current);
+    }
+    client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current);
+    await provider.watch(id);
+    assert.equal(events.filter(event => event.type === 'text_delta').map(event => event.text).join(''), 'First.\nSecond.\nThird.');
+    assert.equal(events.filter(event => event.type === 'result').length, 1);
+    assert.equal(events.find(event => event.type === 'result').text, 'First.\nSecond.\nThird.');
+    assert.equal(client.starts.length, 1);
+  } finally { await provider.close(); }
+});
+
+test('all display preferences leave questions, approval choices, correlation and replies unchanged', async () => {
+  const baseline = setup();
+  const customized = setup({ readTextFormatting: () => ({ showTimestamps: false, showProgressUpdates: false, paragraphSpacing: 'compact' }) });
+  try {
+    for (const instance of [baseline, customized]) {
+      instance.client.current = state('inProgress', '', 'actions');
+      instance.client.current.requests = [questionRequest()];
+    }
+    const original = await baseline.provider.getActions(id);
+    const modified = await customized.provider.getActions(id);
+    const withoutRandomToken = actions => actions.map(action => ({ ...action, presentation: { ...action.presentation, token: '<token>' } }));
+    assert.deepEqual(withoutRandomToken(modified), withoutRandomToken(original));
+    const action = modified[0];
+    await customized.provider.respondQuestion(id, 'Blue', { requestId: action.id, actionToken: action.presentation.token });
+    await baseline.provider.respondQuestion(id, 'Blue', { requestId: original[0].id, actionToken: original[0].presentation.token });
+    assert.deepEqual(customized.client.replies, baseline.client.replies);
+    for (const instance of [baseline, customized]) {
+      instance.client.current.requests = [{ id: 11, method: 'item/commandExecution/requestApproval', params: {
+        turnId: 'actions', command: 'echo first\n\necho second', availableDecisions: ['accept', 'decline'],
+      } }];
+      instance.client.emit('state', id, instance.client.current);
+    }
+    const [approval] = await customized.provider.getActions(id);
+    const [originalApproval] = await baseline.provider.getActions(id);
+    // Opaque tokens and choice keys are independently generated per presentation.
+    assert.equal(approval.fingerprint, originalApproval.fingerprint);
+    assert.deepEqual(approval.choices, originalApproval.choices);
+    assert.equal(approval.description, originalApproval.description);
+    assert.equal(approval.title, originalApproval.title);
+  } finally { await baseline.provider.close(); await customized.provider.close(); }
+});
+
+test('a late commentary suffix after a flushed paragraph gap keeps every word once', async () => {
+  const { provider, client, events } = setup({ readTextFormatting: () => ({ ...DEFAULT_TEXT_FORMATTING, paragraphSpacing: 'compact' }) });
+  try {
+    client.current = state('inProgress', '', 'commentary');
+    const update = { id: 'update', type: 'agentMessage', phase: 'commentary', text: 'First.\n\n' };
+    client.current.turns[0].items.push(update, { id: 'reason', type: 'reasoning' });
+    await provider.watch(id);
+    update.text += 'Second.'; client.emit('state', id, client.current);
+    update.text += ' Third.'; client.emit('state', id, client.current);
+    const shown = events.filter(event => event.type === 'tool_end').map(event => event.summary).join('');
+    assert.equal(shown, 'First.\n\nSecond. Third.');
+    assert.equal(client.starts.length, 0);
+    assert.equal(client.replies.length, 0);
   } finally { await provider.close(); }
 });

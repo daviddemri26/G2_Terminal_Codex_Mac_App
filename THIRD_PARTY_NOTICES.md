@@ -11,8 +11,8 @@ with exact archive integrity pinned in `package-lock.json` and
 `integration/upstream.json`. It applies the committed patch in `integration/`.
 The complete vendor package and its dependencies are not committed to Git.
 
-The inspected 0.10.4 npm package has no declared `license` field and contains no
-top-level `LICENSE` file. This document does not assign a license to that package
+The inspected 0.10.4 npm README states MIT, but the package has no declared
+`license` field and contains no top-level `LICENSE` file. This document does not assign a license to that package
 or assert permission to redistribute it. Review the applicable upstream terms
 before distributing a bundled runtime outside this local installation.
 

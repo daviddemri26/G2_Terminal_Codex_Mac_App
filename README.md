@@ -1,47 +1,111 @@
 # G2 Bridge
 
-A local bridge between Even Terminal on your phone/glasses and the task engine
-already running in the Codex Mac app, with a small native macOS control window.
-This is an independent integration, not an official OpenAI or Even Realities app.
+**Use your Codex Mac conversations from Even G2 glasses.**
 
-**One place to edit, one stable installed version.** This repository is the source
-of truth. Daily use runs from a separate, verified release in Application Support.
-Changing a branch or rebuilding the project does not replace the running bridge.
+This is for people who use **Even G2 + Even Terminal** and do their work in the
+**Codex Mac app**, without running Codex in a terminal. Find an existing Mac
+conversation, follow its progress, and continue it from your glasses. Keep using
+the same conversation when you return to the Mac.
 
-## Daily use
+[**Start with the setup guide →**](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/)
+ · [Read the guide on GitHub](docs/getting-started.md)
+ · [Download the source installer](https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/archive/refs/heads/main.zip)
 
-Open **G2 Bridge** from Applications or the Dock to view status, start or stop the
-bridge, set launch at login, run diagnostics, or return to the previous installed
-release. Closing the window or quitting this control app leaves the service
-running. The Mac must be logged in and awake, the Codex Mac app must be available,
-and the configured Tailscale connection must work.
+## Why this exists
 
-The service starts at the user's graphical login when that preference is enabled;
-it does not run before login. A ready status describes the local bridge and its
-dependencies, not a confirmed physical connection to the glasses.
+Even Terminal connects smart glasses to coding agents. This project makes that
+experience work with the task engine **already owned by the Mac app**. You do not
+have to start a separate Codex CLI session or move your conversations to another
+workflow.
 
-See [the usage guide](docs/usage.md) for the window and status messages.
+A small Mac window shows whether the bridge is working, helps you pair your phone,
+and lets you choose text presentation. A background service handles the connection
+and starts when you sign in. Closing the window leaves it running.
 
-## Current compatibility
+## What you can do
 
-| Component | Reviewed version |
+- Find and reopen supported local Codex conversations, with their history.
+- Follow public progress and final answers, then send a follow-up or interrupt.
+- Answer supported questions and approval choices; complex controls remain in the Mac app.
+- Choose message timestamps, live progress updates, and paragraph spacing. **The original display remains the default.**
+- Pair your phone with a QR code, check status, set launch at login, and run diagnostics.
+
+The glasses still control their own font, brightness, wrapping, and built-in
+labels. G2 Bridge does not reproduce every Mac control. See the
+[interaction details](client-contract/README.md) for precise support.
+
+## Start here
+
+1. **Check the requirements below.** Open your supported Codex Mac app and connect
+   your glasses to the Even Realities phone app.
+2. **Connect Tailscale on your Mac and phone** for the guided first setup. If you
+   already use a different Even Terminal connection, read the [network guide](docs/network-options.md).
+3. **Download and expand this repository.** Double-click
+   **Install G2 Bridge.command** and follow its checks. It builds the app locally
+   and installs it in Applications; it obtains the reviewed Node runtime if needed.
+4. **Open G2 Bridge → Connect.** Show the pairing QR code and scan it in the
+   Even Realities app's Terminal Mode. Choose a conversation you recognize.
+
+The [step-by-step tutorial](docs/getting-started.md) explains the one-time Apple
+developer-tools requirement and the phone setup in plain English. The installer
+does not require you to install or use the Codex CLI.
+
+**Current release stage: public alpha.** Installation builds from source and needs
+Apple's Command Line Tools. There is no Apple-notarized, ready-made download yet.
+The desktop connection uses a private protocol, so it supports a specific Mac app
+version rather than every current or future release.
+
+## What you need
+
+| Component | Supported / reviewed combination |
 | --- | --- |
-| Bridge | 0.2.7 |
-| Control app | 1.0.0 |
-| Even Terminal npm package | 0.10.4 |
-| Codex Mac app | 26.915.31945, build 9922 |
-| Node.js | 26.9.0 |
+| Mac | macOS 14 or later; Apple Silicon is the reviewed setup |
+| Codex in the Mac app | **26.915.31945, build 9922**; supported `Codex.app` or `ChatGPT.app` identity |
+| Glasses | **Even G2**, with the Even Realities phone app and Terminal Mode; vendor setup includes the R1 ring |
+| G2 firmware / phone app | Exact versions have not been recorded for certification; no universal/minimum firmware claim |
+| Connection | Tailscale for new setup; existing LAN/interface profiles can be preserved |
+| Apple tools | Command Line Tools with Swift 6 or later and Python 3 |
+| Included dependency | Pinned Even Terminal **0.10.4**; Node **26.9.0** |
 
-The bridge uses a **private local desktop protocol**. Mac app and Node upgrades
-need compatibility review; the control window cannot remove this dependency.
-Version declarations are kept in [compatibility.json](compatibility.json).
-Python 3 at `/usr/bin/python3` is also required for the service and control app;
-on this setup it comes from Apple's developer tools and is not bundled.
-The native control app requires macOS 14 or later.
+The definitive release versions are in [compatibility.json](compatibility.json).
+If your Mac app version differs, the installer stops with an explanation. A new
+Mac app build must be reviewed before it is accepted. The bridge does not bypass
+that check or silently start another task engine.
 
-## Build and check
+**Does it work without Tailscale?** Even Terminal already supports the same Wi-Fi
+and other network modes. The Codex desktop connection does not inherently require
+Tailscale. It is the physically reviewed setup here; other modes have different
+status/reconnection limits and have not been validated on the phone/glasses.
+If a LAN/interface address changes, finish the interaction, restart the bridge
+when safe, then show and scan the new QR. Refreshing the QR alone is insufficient.
+Read the [network comparison](docs/network-options.md).
 
-From the repository root, with the reviewed Node version and Python 3 available:
+## How it works, simply
+
+```text
+Even G2 ↔ Even Realities phone app ↔ configured network ↔ G2 Bridge ↔ Codex Mac app
+```
+
+The phone sends authenticated messages to the bridge on your Mac. The bridge
+translates them into the Mac app's local protocol, and sends its public responses
+back in the format Even Terminal understands. The Mac app remains responsible
+for running the task. Saved delivery records help reconcile interrupted
+connections without blindly sending the same instruction twice.
+
+Keep your Mac logged in and awake, with Codex and the configured network available.
+Automatic startup begins at login, not before it, and G2 Bridge does not change
+sleep settings. “Ready” confirms local checks; seeing your conversation on the
+glasses is the separate end-to-end check.
+
+This is an independent community integration, not an official OpenAI or Even
+Realities product. Your existing Codex account and its normal data handling still
+apply; a local bridge does not make the AI service offline.
+
+## For contributors and advanced users
+
+**One editable source: this repository.** The installed background service is a
+verified build. It is never maintained as a second source tree. Dependencies,
+pairing secrets, histories, journals, and logs stay outside Git.
 
 ```sh
 npm ci --ignore-scripts
@@ -49,39 +113,22 @@ npm run check
 bash scripts/build-app.sh
 ```
 
-This restores locked dependencies, builds `.build/runtime`, runs the offline
-tests, and builds `.build/G2 Bridge.app`. It does not install, restart, or send a
-prompt through the live service. The runtime is rebuilt from the pinned npm
-package plus the committed integration patch; it no longer depends on an older
-source archive or a modified global npm installation. See [development](docs/development.md).
+These commands restore locked dependencies, build `.build/runtime`, run the
+offline tests, and build `.build/G2 Bridge.app`. They do not install, restart, or
+send a prompt through the live service. Use the reviewed Node version.
 
-## Repository map
-
-| Location | Purpose |
+| Area | Guide |
 | --- | --- |
-| `bridge/` | Desktop connection, provider, task catalog, delivery journal, client adapter, and unit tests |
-| `client-contract/` | Even Terminal protocol notes and adapter tests |
-| `integration/` | Exact upstream package metadata and reviewed three-file patch |
-| `operations/` | Installation, launchd supervision, status/control, and lifecycle tests |
-| `macos/` | Native SwiftUI control app and Dock icon |
-| `scripts/` | Reproducible build and packaging commands |
-| `tests/` | Integration/build checks, synthetic fixtures, and separate manual helpers |
-| `docs/` | Usage, architecture, maintenance, and migration records |
-| `.build/`, `node_modules/` | Generated local files; excluded from Git |
+| First installation and pairing | [Getting started](docs/getting-started.md) |
+| Controls and text settings | [Daily use](docs/usage.md) |
+| Network choices and limits | [Tailscale / same Wi-Fi](docs/network-options.md) |
+| Components and local folders | [Architecture](docs/architecture.md) |
+| Builds and tests | [Development](docs/development.md) |
+| Updates, rollback, and removal | [Maintenance](docs/maintenance.md) |
+| Import history and validation boundaries | [Migration](docs/migration.md) |
+| Protocol, questions, and approvals | [Client contract](client-contract/README.md) |
+| Release history and dependencies | [Change log](CHANGELOG.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) |
 
-Configuration, tokens, task histories, delivery journals, logs, installed releases,
-and extracted desktop application source do not belong in this repository.
-
-## Documentation
-
-- [Architecture and local folders](docs/architecture.md)
-- [Development and tests](docs/development.md)
-- [Daily use and settings](docs/usage.md)
-- [Install, update, recover, and uninstall](docs/maintenance.md)
-- [Source migration and verification boundaries](docs/migration.md)
-- [Change log](CHANGELOG.md) and [third-party notices](THIRD_PARTY_NOTICES.md)
-
-The initial source import preserves bridge 0.2.7 behavior. Its historical validation
-record is in [the import manifest](docs/provenance/import-0.2.7.json); a source
-import or passing offline checks alone does not establish that a new release has
-been installed or physically tested on the glasses.
+Sources live in `bridge/`, `operations/`, and `macos/`; `integration/` records the
+pinned upstream patch, `scripts/` builds and packages, `tests/` validates behavior,
+and `site/` publishes this project's GitHub Pages tutorial.

@@ -12,16 +12,18 @@ private enum Palette {
 }
 
 private enum Section: String, CaseIterable {
-    case overview = "Overview", settings = "Settings", maintenance = "Maintenance"
+    case overview = "Overview", text = "Text", connect = "Connect", settings = "Settings", maintenance = "Maintenance"
     var icon: String {
-        switch self { case .overview: "square.grid.2x2"; case .settings: "slider.horizontal.3"; case .maintenance: "wrench.and.screwdriver" }
+        switch self { case .overview: "square.grid.2x2"; case .text: "textformat"; case .connect: "qrcode"; case .settings: "slider.horizontal.3"; case .maintenance: "wrench.and.screwdriver" }
     }
     var heading: String {
-        switch self { case .overview: "Your bridge, at a glance."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
+        switch self { case .overview: "Your bridge, at a glance."; case .text: "Make room for your words."; case .connect: "From your Mac to your glasses."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
     }
     var description: String {
         switch self {
         case .overview: "A quiet connection between your Mac and Even Terminal."
+        case .text: "Choose how messages are presented in Even Terminal."
+        case .connect: "Your existing Codex conversations, within reach."
         case .settings: "A few simple preferences for everyday use."
         case .maintenance: "Check your installation and manage its versions."
         }
@@ -33,6 +35,7 @@ struct BridgeWindow: View {
     @State private var selection: Section = .overview
     @State private var confirmsRollback = false
     @State private var confirmsStop = false
+    @State private var textDraft = TextFormatting.original
 
     var body: some View {
         HStack(spacing: 0) {
@@ -48,8 +51,15 @@ struct BridgeWindow: View {
                         notice(error + " Displayed status may be out of date.", icon: "exclamationmark.triangle", color: .orange)
                     }
                     if let snapshot = model.snapshot {
+                        if snapshot.pendingUpdate?.state == "waiting" {
+                            notice("A reviewed update will install after the current interaction finishes. Your connection stays available until then.", icon: "clock", color: Palette.accent)
+                        } else if snapshot.pendingUpdate?.state == "stopped" {
+                            notice("The queued update stopped. Open Maintenance to check the installation before retrying.", icon: "info.circle", color: .orange)
+                        }
                         switch selection {
                         case .overview: overview(snapshot)
+                        case .text: textOptions(snapshot)
+                        case .connect: connect(snapshot)
                         case .settings: settings(snapshot)
                         case .maintenance: maintenance(snapshot)
                         }
@@ -57,6 +67,7 @@ struct BridgeWindow: View {
                         VStack(alignment: .leading, spacing: 16) {
                             HStack(spacing: 12) { ProgressView().controlSize(.small); Text("Reading your local bridge…").font(.system(size: 15, weight: .medium)) }
                             Text("This window checks the service without interrupting it.").font(.system(size: 13)).foregroundStyle(Palette.secondary)
+                            Button("Open installation guide") { model.openGuide() }.buttonStyle(BridgeButtonStyle())
                         }.frame(maxWidth: .infinity, alignment: .leading).padding(24).panel()
                     }
                     if let action = model.busyAction {
@@ -77,6 +88,24 @@ struct BridgeWindow: View {
         .foregroundStyle(Palette.text)
         .tint(Palette.accent)
         .preferredColorScheme(.dark)
+        .onChange(of: model.snapshot?.textFormatting) { old, new in
+            if textDraft == (old ?? .original) { textDraft = new ?? .original }
+        }
+        .sheet(isPresented: Binding(get: { model.pairingImage != nil }, set: { if !$0 { model.pairingImage = nil } })) {
+            VStack(spacing: 18) {
+                Text("Pair your phone").font(.system(size: 23, weight: .semibold))
+                Text("In the Even app, open Terminal Mode and scan this code.")
+                    .font(.system(size: 13)).multilineTextAlignment(.center)
+                if let image = model.pairingImage {
+                    Image(nsImage: image).interpolation(.none).resizable().scaledToFit()
+                        .frame(width: 260, height: 260).padding(16).background(.white, in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityLabel("Private pairing QR code")
+                }
+                Text("This code gives access to your bridge. Keep it private.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.secondary)
+                Button("Done") { model.pairingImage = nil }.buttonStyle(BridgeButtonStyle(primary: true))
+            }.padding(32).frame(width: 440).background(Palette.background).foregroundStyle(Palette.text)
+        }
         .alert("Unable to complete request", isPresented: Binding(get: { model.operationError != nil }, set: { if !$0 { model.operationError = nil } })) {
             Button("OK", role: .cancel) { model.operationError = nil }
         } message: { Text(model.operationError ?? "") }
@@ -120,7 +149,9 @@ struct BridgeWindow: View {
                         .font(.system(size: 11, weight: .medium))
                 }
                 Text("The service works independently\nof this window.").font(.system(size: 10)).foregroundStyle(Palette.secondary).lineSpacing(3)
-                Text("G2 Bridge 1.0").font(.system(size: 10)).foregroundStyle(Palette.secondary.opacity(0.7)).padding(.top, 4)
+                Button { model.openGuide() } label: { Label("Setup guide", systemImage: "book") }
+                    .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(Palette.accent).padding(.top, 6)
+                Text("G2 Bridge 1.1").font(.system(size: 10)).foregroundStyle(Palette.secondary.opacity(0.7)).padding(.top, 4)
             }.padding(.horizontal, 23).padding(.bottom, 25)
         }.frame(width: 187).background(Palette.sidebar)
     }
@@ -165,7 +196,7 @@ struct BridgeWindow: View {
 
             HStack(spacing: 13) {
                 connectionCard(title: "Mac connection", icon: "desktopcomputer", value: snapshot.desktopCompatible ? (snapshot.desktopAvailable ? "Available" : "App is closed") : "Check compatibility", available: snapshot.desktopCompatible && snapshot.desktopAvailable)
-                connectionCard(title: "Private network", icon: "network", value: snapshot.networkAvailable ? "Available" : "Not available", available: snapshot.networkAvailable)
+                connectionCard(title: networkTitle(snapshot), icon: "network", value: snapshot.networkVerified == false ? "Configured · not checked" : snapshot.networkAvailable ? "Available" : "Not available", available: snapshot.networkAvailable)
             }
 
             HStack(spacing: 10) {
@@ -182,6 +213,11 @@ struct BridgeWindow: View {
                 Button { model.openMacApp() } label: { Label("Open Mac App", systemImage: "arrow.up.right") }
                     .buttonStyle(BridgeButtonStyle()).accessibilityIdentifier("open-mac-app")
             }.padding(.top, 5)
+
+            if !snapshot.installed {
+                Button { model.openGuide() } label: { Label("Start with the installation guide", systemImage: "book") }
+                    .buttonStyle(BridgeButtonStyle(primary: true))
+            }
 
             if !snapshot.safeToChange && snapshot.installed && snapshot.canStart != true {
                 notice("Controls become available when the current interaction has finished and the service is safe to change.", icon: "lock", color: Palette.secondary)
@@ -218,13 +254,126 @@ struct BridgeWindow: View {
             }.panel()
             VStack(alignment: .leading, spacing: 14) {
                 Text("Your connection").font(.system(size: 14, weight: .semibold))
-                Text("Your existing Even Terminal pairing and network configuration stay with the local bridge. Manage the private network in Tailscale.")
+                Text("Your existing Even Terminal pairing and network configuration stay with the local bridge. Current connection: \(networkTitle(snapshot)).")
                     .font(.system(size: 12)).foregroundStyle(Palette.secondary).lineSpacing(4)
-                Button { model.openTailscale() } label: { Label("Open Tailscale", systemImage: "arrow.up.right") }.buttonStyle(BridgeButtonStyle())
+                if snapshot.networkMode == nil || snapshot.networkMode == "tailscale" {
+                    Button { model.openTailscale() } label: { Label("Open Tailscale", systemImage: "arrow.up.right") }.buttonStyle(BridgeButtonStyle())
+                } else {
+                    Button { model.openGuide() } label: { Label("Connection guide", systemImage: "book") }.buttonStyle(BridgeButtonStyle())
+                }
             }.padding(23).frame(maxWidth: .infinity, alignment: .leading).panel()
             if snapshot.canChangePreferences != true && snapshot.installed {
                 notice("The launch preference is unavailable until the local service can be safely managed.", icon: "lock", color: Palette.secondary)
             }
+        }
+    }
+
+    private func textOptions(_ snapshot: BridgeSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 20) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Message timestamps").font(.system(size: 13, weight: .semibold))
+                        Text("Show when a response was sent.").font(.system(size: 11)).foregroundStyle(Palette.secondary)
+                    }
+                    Spacer()
+                    Toggle("Message timestamps", isOn: $textDraft.showTimestamps).labelsHidden().toggleStyle(.switch)
+                        .accessibilityIdentifier("text-timestamps")
+                }
+                Divider().overlay(Palette.border)
+                HStack {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("Live progress updates").font(.system(size: 13, weight: .semibold))
+                        Text("Follow along while Codex is working.").font(.system(size: 11)).foregroundStyle(Palette.secondary)
+                    }
+                    Spacer()
+                    Toggle("Live progress updates", isOn: $textDraft.showProgressUpdates).labelsHidden().toggleStyle(.switch)
+                        .accessibilityIdentifier("text-progress")
+                }
+                Divider().overlay(Palette.border)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Paragraph spacing").font(.system(size: 13, weight: .semibold))
+                    Picker("Paragraph spacing", selection: $textDraft.paragraphSpacing) {
+                        Text("Original").tag("original")
+                        Text("Compact").tag("compact")
+                        Text("Comfortable").tag("comfortable")
+                    }.labelsHidden().pickerStyle(.segmented).accessibilityIdentifier("text-spacing")
+                }
+            }.padding(23).panel()
+            HStack(spacing: 10) {
+                Button("Save changes") { model.saveFormatting(textDraft) }.buttonStyle(BridgeButtonStyle(primary: true))
+                    .disabled(!model.canChangeFormatting || textDraft == (snapshot.textFormatting ?? .original))
+                    .accessibilityIdentifier("save-text-formatting")
+                Button("Reset to original") { textDraft = .original }.buttonStyle(BridgeButtonStyle())
+                    .disabled(textDraft == .original).accessibilityIdentifier("reset-text-formatting")
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("EXAMPLE").font(.system(size: 9, weight: .semibold)).tracking(1.3)
+                    Spacer()
+                    Text("Illustration · actual layout is controlled by Even Terminal").font(.system(size: 9))
+                }.foregroundStyle(Palette.secondary)
+                Text(textDraft.sampleText).font(.system(size: 13, design: .monospaced)).lineSpacing(3)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if textDraft.showProgressUpdates {
+                    Label("Working on your next step…", systemImage: "waveform")
+                        .font(.system(size: 10)).foregroundStyle(Palette.accent)
+                }
+            }.padding(20).background(Palette.sidebar, in: RoundedRectangle(cornerRadius: 14))
+            Text("The original settings keep the established reading experience. Changes apply to the next response or a reopened conversation. Questions, approval choices, and code remain intact.")
+                .font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(4)
+            if snapshot.formattingSupported != true && !model.preview {
+                notice("Text settings need bridge 0.2.8 or newer. Install the reviewed update before saving changes.", icon: "info.circle", color: .orange)
+            }
+        }.onAppear { textDraft = snapshot.textFormatting ?? .original }
+    }
+
+    private func connect(_ snapshot: BridgeSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 18) {
+                connectionStep("1", title: "Open Codex on your Mac", detail: "Use the Mac app you already know. Sign in and open a conversation; no separate Codex terminal session is needed.")
+                connectionStep("2", title: networkTitle(snapshot), detail: snapshot.networkMode == "tailscale" || snapshot.networkMode == nil
+                    ? "Connect your Mac and phone to the same Tailscale account. They can be on different Wi-Fi networks."
+                    : "Use the connection already configured in Even Terminal. Read the guide for the requirements and limits of this connection type.")
+                connectionStep("3", title: "Pair Even Terminal", detail: "Enable Terminal Mode in the Even app on your phone, then scan your private pairing code. Keep the Mac awake while using the bridge.")
+            }.padding(23).panel()
+            HStack(spacing: 10) {
+                Button { model.showPairing() } label: { Label("Show pairing code", systemImage: "qrcode") }
+                    .buttonStyle(BridgeButtonStyle(primary: true))
+                    .disabled(model.preview || model.busyAction != nil || !snapshot.installed || !snapshot.running || !snapshot.networkAvailable)
+                    .accessibilityIdentifier("show-pairing")
+                Button { model.openGuide() } label: { Label("Step-by-step guide", systemImage: "book") }
+                    .buttonStyle(BridgeButtonStyle())
+            }
+            Text("Already paired? Keep using your saved host. Moving this app or changing text settings does not require pairing again.")
+                .font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(4)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Reviewed compatibility").font(.system(size: 13, weight: .semibold))
+                Text("Codex Mac app 26.915.31945 · build 9922\nEven Terminal 0.10.4 · Even G2\nExact phone app and glasses firmware versions have not been recorded.")
+                    .font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(5)
+            }.padding(20).frame(maxWidth: .infinity, alignment: .leading).panel()
+        }
+    }
+
+    private func connectionStep(_ number: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Text(number).font(.system(size: 11, weight: .semibold)).foregroundStyle(Palette.accent)
+                .frame(width: 24, height: 24).background(Palette.accent.opacity(0.1), in: Circle())
+            VStack(alignment: .leading, spacing: 6) {
+                Text(title).font(.system(size: 13, weight: .semibold))
+                Text(detail).font(.system(size: 11)).foregroundStyle(Palette.secondary).lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func networkTitle(_ snapshot: BridgeSnapshot) -> String {
+        switch snapshot.networkMode {
+        case "tailscale": "Tailscale"
+        case "lan": "Local Wi-Fi / Ethernet"
+        case "interface": "Configured network interface"
+        case "expose": "Configured public connection"
+        default: "Configured network"
         }
     }
 

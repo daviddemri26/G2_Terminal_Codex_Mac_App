@@ -10,14 +10,18 @@ import time
 
 from common import (BridgeError, DEFAULT_SUPPORT, EXPECTED_BUILD, api, child_environment,
                     command_output, desktop_build, exclusive_lock, idle, load_config,
-                    pending_delivery, port_available, private_directory, read_json, status, validate_release)
+                    pending_delivery, port_available, private_directory, read_json, status,
+                    tailscale_executable, validate_release)
 
 
 def network_address(config):
     if config.get('network', {}).get('mode') != 'tailscale':
         return 'configured-network'
     try:
-        address = command_output(['/usr/local/bin/tailscale', 'ip', '-4'], timeout=4).splitlines()[0]
+        executable = tailscale_executable()
+        if executable is None:
+            return None
+        address = command_output([str(executable), 'ip', '-4'], timeout=4).splitlines()[0]
         return address if address.startswith('100.') else None
     except (OSError, subprocess.SubprocessError, IndexError):
         return None

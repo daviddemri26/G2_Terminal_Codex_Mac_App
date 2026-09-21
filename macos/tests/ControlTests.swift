@@ -9,6 +9,10 @@ enum ControlTests {
     static func main() async throws {
         let ready = BridgeSnapshot.preview
         try require(ready.isReady, "Preview ready state should be available")
+        let formatting = TextFormatting.original
+        try require(formatting.showTimestamps && formatting.showProgressUpdates && formatting.paragraphSpacing == "original", "The original rendering must remain the default")
+        let formattingRoundTrip = try JSONDecoder().decode(TextFormatting.self, from: JSONEncoder().encode(formatting))
+        try require(formattingRoundTrip == formatting, "Saved formatting must follow the controller JSON contract")
         let fixture = """
         {"installed":true,"running":true,"launchAtLogin":true,"bridgeVersion":"0.2.7","previousVersion":null,"state":"starting","message":"Starting","action":"Wait","desktopCompatible":true,"desktopAvailable":true,"networkAvailable":true,"safeToChange":false,"canRollback":false,"supportPath":"","checkedAt":"2026-09-21T12:00:00Z"}
         """

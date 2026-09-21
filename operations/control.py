@@ -23,6 +23,9 @@ from supervisor import network_address
 
 MAX_INPUT_BYTES = 4096
 MAX_JSON_BYTES = 4 * 1024 * 1024
+DEFAULT_TEXT_FORMATTING = {'showTimestamps': True, 'showProgressUpdates': True,
+                           'paragraphSpacing': 'original'}
+FORMATTING_VERSIONS = ('G2 Desktop Bridge 0.2.8',)
 STATES = {
     'not_installed': ('The managed bridge is not installed.', 'Install a reviewed release from the project.'),
     'stopped': ('The bridge is stopped.', 'Start the bridge when you are ready.'),
@@ -150,20 +153,78 @@ def safe_to_change(config, support):
         return False
 
 
+def validate_formatting(value):
+    if (not isinstance(value, dict) or set(value) != set(DEFAULT_TEXT_FORMATTING)
+            or type(value.get('showTimestamps')) is not bool
+            or type(value.get('showProgressUpdates')) is not bool
+            or value.get('paragraphSpacing') not in ('original', 'compact', 'comfortable')):
+        raise common.BridgeError('Text settings require boolean showTimestamps and showProgressUpdates values, '
+                                 'and paragraphSpacing set to original, compact, or comfortable.')
+    return {name: value[name] for name in DEFAULT_TEXT_FORMATTING}
+
+
+def saved_formatting(support):
+    path = Path(support) / 'preferences.json'
+    try:
+        path = owned_file(path)
+        if path.stat().st_size > MAX_INPUT_BYTES:
+            raise ValueError('Oversized preferences')
+        record = read_record(path)
+        if type(record.get('format')) is not int or record['format'] != 1 or set(record) != {'format', 'textFormatting'}:
+            raise ValueError('Invalid preferences format')
+        return validate_formatting(record['textFormatting']), True
+    except FileNotFoundError:
+        return dict(DEFAULT_TEXT_FORMATTING), True
+    except Exception:
+        # Match the runtime fallback, never publish corrupted file contents.
+        return dict(DEFAULT_TEXT_FORMATTING), False
+
+
+def network_mode(config):
+    mode = config.get('network', {}).get('mode', 'lan')
+    return mode if mode in ('tailscale', 'lan', 'interface', 'expose') else 'unknown'
+
+
+def pending_update(support):
+    """A bounded, sanitized UI hint; it never authorizes a lifecycle change."""
+    try:
+        path = owned_file(Path(support) / 'pending-update.json')
+        if path.stat().st_size > MAX_INPUT_BYTES:
+            return None
+        record = read_record(path)
+        state = record.get('state')
+        if state not in ('waiting', 'complete', 'stopped') or record.get('targetVersion') not in manage.VERSIONS:
+            return None
+        if state == 'waiting':
+            expiry = record.get('expiresAt')
+            if type(expiry) not in (int, float) or not time.time() < expiry <= time.time() + 3900:
+                state = 'stopped'
+        return {'state': state, 'targetVersion': record['targetVersion']}
+    except Exception:
+        return None
+
+
 def status(support):
     support = Path(support)
     result = {'installed': (support / 'control.json').is_file(), 'running': False,
         'launchAtLogin': False, 'bridgeVersion': None, 'previousVersion': None,
         'state': 'not_installed', 'message': '', 'action': '', 'desktopCompatible': False,
         'desktopAvailable': desktop_available(), 'networkAvailable': False,
+        'networkMode': 'unknown', 'networkVerified': False,
         'safeToChange': False, 'canStart': False, 'canChangePreferences': False, 'canRollback': False,
+        'textFormatting': dict(DEFAULT_TEXT_FORMATTING), 'formattingPreferencesValid': True,
+        'formattingSupported': False, 'canChangeFormatting': False,
+        'pendingUpdate': None,
         'supportPath': str(support), 'checkedAt': checked_at()}
     result['desktopCompatible'] = common.desktop_build() == common.EXPECTED_BUILD
     if result['installed']:
         try:
             control = installation(support)
+            result['pendingUpdate'] = pending_update(support)
             manifest = release_summary(support, control['activeRelease'])
             result['bridgeVersion'] = manifest['bridgeVersion']
+            result['formattingSupported'] = manifest['bridgeVersion'] in FORMATTING_VERSIONS
+            result['textFormatting'], result['formattingPreferencesValid'] = saved_formatting(support)
             if control.get('previousRelease'):
                 with suppress(Exception):
                     previous = release_summary(support, control['previousRelease'])
@@ -174,8 +235,11 @@ def status(support):
             result['running'] = service['loaded']
             result['launchAtLogin'] = manage.launch_at_login() and manage.plist_path().exists()
             result['canChangePreferences'] = manage.plist_path().exists()
+            result['canChangeFormatting'] = result['formattingSupported'] and manage.plist_path().exists()
             config = common.load_config(owned_file(control['configPath']))
             result['networkAvailable'] = network_address(config) is not None
+            result['networkMode'] = network_mode(config)
+            result['networkVerified'] = result['networkMode'] == 'tailscale'
             result['safeToChange'] = safe_to_change(config, support)
             available, responded = False, False
             if not common.port_available(config.get('port', 3456)):
@@ -224,7 +288,7 @@ def status(support):
             result['state'] = state
         except Exception:
             result.update(state='invalid_installation', safeToChange=False, canStart=False,
-                          canChangePreferences=False, canRollback=False)
+                          canChangePreferences=False, canChangeFormatting=False, canRollback=False)
     result['message'], result['action'] = STATES[result['state']]
     return result
 
@@ -262,7 +326,7 @@ def diagnostics(support):
     return result
 
 
-def read_preferences(stream):
+def read_settings_input(stream):
     data = stream.read(MAX_INPUT_BYTES + 1)
     if len(data) > MAX_INPUT_BYTES:
         raise common.BridgeError('The settings request is too large.')
@@ -270,9 +334,18 @@ def read_preferences(stream):
         value = json.loads(data)
     except (ValueError, UnicodeDecodeError):
         raise common.BridgeError('The settings request must be valid JSON.') from None
+    return value
+
+
+def read_preferences(stream):
+    value = read_settings_input(stream)
     if not isinstance(value, dict) or set(value) != {'launchAtLogin'} or type(value['launchAtLogin']) is not bool:
         raise common.BridgeError('Settings must contain only a boolean launchAtLogin value.')
     return value
+
+
+def read_formatting(stream):
+    return validate_formatting(read_settings_input(stream))
 
 
 def check_start(support, control):
@@ -358,6 +431,14 @@ def mutate(command, support, preferences=None):
             service_snapshot(support)
             manage.launchctl('enable' if preferences['launchAtLogin'] else 'disable',
                              manage.domain() + '/' + common.LABEL)
+        elif command in ('set-formatting', 'reset-formatting'):
+            if release_summary(support, control['activeRelease'])['bridgeVersion'] not in FORMATTING_VERSIONS:
+                raise common.BridgeError('Install a bridge release with text settings before changing formatting.')
+            formatting = validate_formatting(DEFAULT_TEXT_FORMATTING if command == 'reset-formatting' else preferences)
+            path = support / 'preferences.json'
+            if path.exists() or path.is_symlink():
+                owned_file(path)
+            common.atomic_json(path, {'format': 1, 'textFormatting': formatting})
         elif command == 'rollback':
             if not control.get('previousRelease'):
                 raise common.BridgeError('No verified previous release is available.')
@@ -383,14 +464,16 @@ def public_error(error):
 
 class JSONArgumentParser(argparse.ArgumentParser):
     def error(self, message):
-        raise common.BridgeError('Invalid command arguments. Use status, diagnose, start, stop, restart, set-preferences, or rollback.')
+        raise common.BridgeError('Invalid command arguments. Use status, diagnose, start, stop, restart, '
+                                 'set-preferences, set-formatting, reset-formatting, or rollback.')
 
 
 def main(argv=None):
     support = common.DEFAULT_SUPPORT
     try:
         parser = JSONArgumentParser(description=__doc__)
-        parser.add_argument('command', choices=('status', 'diagnose', 'start', 'stop', 'restart', 'set-preferences', 'rollback'))
+        parser.add_argument('command', choices=('status', 'diagnose', 'start', 'stop', 'restart', 'set-preferences',
+                                               'set-formatting', 'reset-formatting', 'rollback'))
         parser.add_argument('--support', type=Path, default=common.DEFAULT_SUPPORT)
         parser.add_argument('--apply', action='store_true')
         args = parser.parse_args(argv)
@@ -404,6 +487,8 @@ def main(argv=None):
             if not args.apply:
                 raise common.BridgeError('Changing the service requires --apply.')
             preferences = read_preferences(sys.stdin.buffer) if args.command == 'set-preferences' else None
+            if args.command == 'set-formatting':
+                preferences = read_formatting(sys.stdin.buffer)
             mutate(args.command, support, preferences)
             result = status(support)
         result['ok'] = True

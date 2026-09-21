@@ -1,5 +1,26 @@
 # Change log
 
+## Control app 1.1.0 / bridge 0.2.8 — 2026-09-21
+
+- Add Text settings for timestamps, public progress updates, and paragraph spacing.
+  Preserve the 0.2.7 reading experience as the default and keep interactive requests
+  and code intact. Settings apply at the next response or reopened history.
+- Add a Connect page with an explicitly revealed local pairing QR code and a
+  beginner-friendly English GitHub Pages guide.
+- Add a guided source installer, private checksum-verified Node download when
+  needed, fresh configuration creation, and reuse of supported existing network
+  profiles. No separate Codex CLI task engine is installed.
+- Default the window app to `/Applications`, while keeping service data per user.
+- Show the configured network type, with no changes to its transport. Distinguish
+  unverified local-network configuration from the reviewed Tailscale probe.
+- Recognize supported desktop builds under either ChatGPT.app or Codex.app in
+  standard Applications folders; reject conflicting installed versions.
+- Discover Tailscale's existing app-bundled CLI without creating global launchers.
+- Provide an optional bounded update command that waits for an idle bridge and
+  cancels if the installation or complete candidate changes.
+
+See the [validation record](docs/validation-0.2.8.md) for test results and limits.
+
 ## Control app 1.0.0 / repository organization — 2026-09-21
 
 - Establish one source repository with architecture, usage, development,

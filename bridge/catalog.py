@@ -7,8 +7,11 @@ import sys
 
 mode = sys.argv[1]
 if mode == 'version':
-    info = plistlib.loads(Path('/Applications/ChatGPT.app/Contents/Info.plist').read_bytes())
-    print(json.dumps({k: info.get(k) for k in ['CFBundleShortVersionString', 'CFBundleVersion']}))
+    # Source runs share the operations helper; builds include its generated copy.
+    if not (Path(__file__).parent / 'desktop_location.py').exists():
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'operations'))
+    from desktop_location import desktop_build
+    print(json.dumps(desktop_build()))
 elif mode == 'list':
     codex_dir = Path(sys.argv[2])
     candidates = sorted(codex_dir.glob('state_*.sqlite'), key=lambda p: int(p.stem.split('_')[-1]))

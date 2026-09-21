@@ -1,9 +1,12 @@
 {
-  "bridgeVersion": "0.2.7",
-  "appVersion": "1.0.0",
+  "bridgeVersion": "0.2.8",
+  "appVersion": "1.1.0",
   "evenTerminalVersion": "0.10.4",
   "nodeVersion": "v26.9.0",
-  "desktop": { "version": "26.915.31945", "build": "9922" },
+  "desktop": {
+    "version": "26.915.31945",
+    "build": "9922"
+  },
   "desktopProtocol": "private-local-ipc",
   "status": "Validated for this combination only; desktop or runtime upgrades require review."
 }

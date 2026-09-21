@@ -18,9 +18,9 @@ from common import (APP_INFO, BridgeError, DEFAULT_CONFIG, DEFAULT_SOURCE, DEFAU
                     digest, exclusive_lock, idle, load_config, make_plist, port_available,
                     pending_delivery, private_directory, read_json, status, validate_release)
 
-VERSIONS = ('G2 Desktop Bridge 0.1', 'G2 Desktop Bridge 0.2', 'G2 Desktop Bridge 0.2.1', 'G2 Desktop Bridge 0.2.2', 'G2 Desktop Bridge 0.2.3', 'G2 Desktop Bridge 0.2.4', 'G2 Desktop Bridge 0.2.5', 'G2 Desktop Bridge 0.2.6', 'G2 Desktop Bridge 0.2.7')
-INSTALL_VERSION = 'G2 Desktop Bridge 0.2.7'
-OPERATIONS = ('common.py', 'supervisor.py', 'manage.py', 'control.py')
+VERSIONS = ('G2 Desktop Bridge 0.1', 'G2 Desktop Bridge 0.2', 'G2 Desktop Bridge 0.2.1', 'G2 Desktop Bridge 0.2.2', 'G2 Desktop Bridge 0.2.3', 'G2 Desktop Bridge 0.2.4', 'G2 Desktop Bridge 0.2.5', 'G2 Desktop Bridge 0.2.6', 'G2 Desktop Bridge 0.2.7', 'G2 Desktop Bridge 0.2.8')
+INSTALL_VERSION = 'G2 Desktop Bridge 0.2.8'
+OPERATIONS = ('common.py', 'supervisor.py', 'manage.py', 'control.py', 'desktop_location.py')
 
 
 def source_fingerprint(source):
@@ -304,6 +304,16 @@ def install_operations(support):
         shutil.copyfile(source, temp)
         temp.chmod(0o600)
         temp.replace(destination / name)
+    # A private launcher lets upstream use its unchanged `tailscale ip -4`
+    # command even when only the Mac app's bundled CLI exists. It never logs in,
+    # enables a VPN, or changes a global executable/link.
+    shim = destination / '.tailscale.tmp'
+    shim.write_text('#!/bin/sh\n'
+                    ': "${G2_TAILSCALE_EXECUTABLE:?Tailscale executable unavailable}"\n'
+                    'export TAILSCALE_BE_CLI=1\n'
+                    'exec "$G2_TAILSCALE_EXECUTABLE" "$@"\n')
+    shim.chmod(0o700)
+    shim.replace(destination / 'tailscale')
 
 
 def write_plist(support):

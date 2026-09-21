@@ -68,6 +68,7 @@ def build(root=ROOT):
         destination.mkdir(exist_ok=True)
         sources = sorted(p for p in (root / 'bridge').iterdir()
                          if p.suffix in ('.mjs', '.py') and '.test.' not in p.name)
+        sources.append(root / 'operations/desktop_location.py')
         for source in sources:
             shutil.copy2(source, destination / source.name)
         # Upstream's postinstall only fixes these prebuilt executables. No package install scripts run.
