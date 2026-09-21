@@ -1,0 +1,64 @@
+{
+  "name": "@evenrealities/even-terminal",
+  "version": "0.10.4",
+  "integrity": "sha512-GFwthTj61o+JyyjIR73NnJ25FWtGBKJ5V1O3xR7X+NWoGh71J1OAz1klHe3O6nsWMXhWUz7679EogBturGefCg==",
+  "registryTarball": "https://registry.npmjs.org/@evenrealities/even-terminal/-/even-terminal-0.10.4.tgz",
+  "files": {
+    "dist/routes/core.js": {
+      "upstreamSha256": "9c70a3319b30b074bccc258eec08dca29b334076dd5fdd9e3620fdc4260b7119",
+      "patchedSha256": "0b04653ca82c7eaca8e531be47b228f920906e5bcc45d010150ca099df0d5c48"
+    },
+    "dist/routes/events.js": {
+      "upstreamSha256": "43745fe9df24c7aa60042deb33c1178eaf216148a1e571d7219601360c02d3db",
+      "patchedSha256": "81e98e1c026fb6b3bed635dca02aec09928b6330a5a791e14aa8f0aebfa25fb0"
+    },
+    "dist/codex/session.js": {
+      "upstreamSha256": "0dc5b08074bbcd87f1b8819331e9ecc061d223ce565e0055d7d9a4dbcc02ee59",
+      "patchedSha256": "864582206ca9e5cf7f9229f1eec6759a3788938181cfc1a4d2942b8201907b91"
+    }
+  },
+  "upstreamFiles": {
+    "dist/codex/app-server.js": "2ee0bcba2887b4016ec0ee481f15de94674c4f28b7d7d218c2ff13851a319efe",
+    "dist/claude/bash-permission.js": "1dc44d29ed3b3a1b0835d465337ebb4447aee318c4c0410923575756b17ed9be",
+    "dist/expose/providers/bore.js": "c91608ec296445584dd71b65077ee7a8de77f3058fa56bb47faafb972e6f8452",
+    "bin/cli.js": "6ee0b79a981d2cf9f2e581ff7ebcb9d61a0850b391fe88d16da223eff2555640",
+    "dist/startup/common.js": "46d17f1e07287b5756faf5abc7613591579eb7e020b5345f882b0c2c7bda0a15",
+    "bin/config.js": "a7096a7574d720aca2108ceb640a8ed30347107d1e68e74879356de6147eef06",
+    "dist/routes/core.js": "9c70a3319b30b074bccc258eec08dca29b334076dd5fdd9e3620fdc4260b7119",
+    "dist/debug.js": "1f601ce83e27036fb5e0e8fc209445acae5c37bd07f8f28c10a27a0bb44fb1fd",
+    "dist/routes/events.js": "43745fe9df24c7aa60042deb33c1178eaf216148a1e571d7219601360c02d3db",
+    "dist/claude-sync/hook-receiver.js": "2ab76d530c0e7b1b8ec52af1bb164591f42b6f7dea66f5527ce5d97f98501074",
+    "dist/http-log.js": "d460bd24aa68825840aa7b89bda395bdeb96372b3045df5a30d86b40e43d1b67",
+    "dist/index.js": "5a6aa912e04eeb54c78109b926a3b1c0f9ff6b4aae1f4877159ea22503e629cb",
+    "dist/startup/instance.js": "90949231a80853ff661b045af61a4907541f6b46c9a0fab1f7137ff210b15bbe",
+    "dist/logger.js": "e1fb555397519ef9ef02b6b731c1f9dd50e61d473aee50f19677af39cddc7646",
+    "dist/claude/mappers.js": "f0548d89340a426b26ceec495dd1c0f7fc3ff3bea3c451774de231e66260f367",
+    "dist/codex/memory.js": "75a692e2b1bd008c44bf45f3ae5de527d9ab9ef91a9a6af3101a324f975175fd",
+    "dist/expose/providers/ngrok.js": "04aaeefeb5cff5f028045c87b8bac23d310e9d3c474959f096a1049c1115affd",
+    "dist/expose/providers/pinggy.js": "74229716dc6d7cf31402e56f0bcbcd0932e0b0e19d6bb02b078f8432e9ad6ef2",
+    "dist/claude-sync/provider-name.js": "36338900c95c73efedabe52bdb39302897efaaa0682a021eb8ffb35c7d4dfb39",
+    "dist/claude-sync/provider.js": "29a7129d57ab670888b1e4c110b42b462b918d130001e50acc3bd2c834ca3e35",
+    "dist/claude/provider.js": "64395ab091ffbe017c1dbf5661db661fbd84a6bd62f625ef353951e4a4513ea4",
+    "dist/codex/provider.js": "a808ce2c071c7ce9f7fc074b76360d3f7a1d982940bc7280ba7ebea7a6974feb",
+    "dist/expose/registry.js": "9ca4edde2b2e91ca8372874679c23d3fe26ad534c95055181979dfe6f37d221e",
+    "dist/expose/run.js": "7cf875ddf80135b4ad9cdce38d69843793082c608f0052429a18f0bc8e1dd899",
+    "dist/claude/session.js": "8167cfedfb309ebc3d071e79087a385f6b8074ba01807ae9a0b73f9cefe148cb",
+    "dist/codex/session.js": "0dc5b08074bbcd87f1b8819331e9ecc061d223ce565e0055d7d9a4dbcc02ee59",
+    "dist/session.js": "696a6c3ff1b6a92b3544c5c3bd30ced4ff9de97d7041ff8cc1f1449442cad4d4",
+    "dist/util/spawn-shim.js": "4deee48ab93869750f141bc25a319f1b72cb1f5d1b5af080b626c080d53a1410",
+    "dist/codex/status.js": "acf5b80c7e5bfa9e7df45ce58aff7ad2a22cdd272e47b1cf93aa99c7635f737c",
+    "dist/codex/storage.js": "8e199ca64e14373ee74e8c5ecdd26a7915ff74cb43a1c964a13cc74b6f201206",
+    "dist/claude/summarize.js": "f01ca1cd579ba447e4d218ae1b91549078448f488fc84bb1ce97c6c1509ed89c",
+    "dist/codex/summarize.js": "88884d5a0234d9fc72b8b60320bea1194de8a9f7b53ce6635aa166fb71e736a4",
+    "dist/summary-format.js": "73775fff14efa5c9850b10f401671d5c6ecaaf2e9f5604bea6a934f9e3c35113",
+    "dist/claude-sync/transport.js": "ac37384fe953cfc699ad93ecbc33a62659023fc001c2e8657b1b2e9feeae24b5",
+    "dist/expose/types.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+    "dist/types.js": "1e6418ef2d761763717525c6136077bada8239507acf22bf1999c0bff6266fa1",
+    "dist/update.js": "50559748a5109fc14c1e0a07994025fe206d6a4b15a79b53fc07e5af3eb2c69a",
+    "dist/claude-sync/wrapped-session.js": "22013473167b40d17aefa5437b953c2ae15111042e6e821f8ebecc20c973bc0d",
+    "package.json": "f8baeb22620fbd1aeb9fb579c3958101c9159122ba02484332ead942f88bb7c1",
+    "README.md": "07556e202a62686289e14f3e79163468364f0edee2022cf4f49a5c186bdbdb0b",
+    "src/claude-sync/hook-poster.mjs": "f430bd8ef280d6ebc3eb40f4d0b92d22ec4983d1857e676ac35797d061c7b967",
+    "src/claude-sync/wrapper.mjs": "8369dd6045d9287560aced54c054dd3041c55769691ec178d5166a50de9e0509"
+  }
+}

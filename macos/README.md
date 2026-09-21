@@ -1,0 +1,51 @@
+# G2 Bridge for macOS
+
+A small native SwiftUI window for the independently managed desktop bridge. It is a normal Dock application, runs on macOS 14 or newer, and uses no third-party UI framework. Closing the window or quitting the app does not stop the bridge. Click the Dock icon to reopen its existing window.
+
+## Build
+
+From the repository root, with Xcode Command Line Tools installed:
+
+```sh
+bash scripts/build-app.sh
+open ".build/G2 Bridge.app"
+```
+
+The build targets the Mac's current architecture and embeds the standard-library-only Python operations files and app icon. The app is signed ad hoc for local use; it is not notarized or prepared for public distribution. Its runtime requires `/usr/bin/python3`, supplied by the development tools on this Mac. Build the app again after changing `operations/` so its bundled controller matches the source.
+
+For visual review without reading or changing the installed service:
+
+```sh
+open -n ".build/G2 Bridge.app" --args --preview
+```
+
+Preview mode displays a labeled fixture and disables controller requests. Buttons that open other applications remain normal navigation actions. Never use a preview screenshot as evidence of a live service or glasses connection.
+
+## Responsibilities
+
+- **Overview:** service status, Mac compatibility and availability, private network availability, guarded start/stop/restart, and a shortcut to the Mac app.
+- **Settings:** launch at login for the bridge (not for this window), plus a Tailscale shortcut.
+- **Maintenance:** installed and previous versions, a read-only installation check, support-folder access, and confirmed rollback to a previously verified release.
+
+The UI observes `operations/control.py status` approximately every eight seconds. All subprocess work runs off the main thread. While a request runs, conflicting controls are disabled. A failed refresh leaves the last known state visible with a clear stale-status message and disables mutations. Each mutation asks the backend to recheck that maintenance is safe; the UI snapshot is not the authority.
+
+Changing launch at login updates the next-sign-in preference without stopping a current interaction. It uses the separate `canChangePreferences` status flag. Start uses `canStart`, which permits reconciliation by the same verified release when the service is completely stopped. Stop, restart, and rollback use `safeToChange`.
+
+The status does not claim that physical glasses are connected. Mac process availability, compatible version, network availability, and bridge health are distinct observations. Pairing and network configuration remain in their existing local locations, not in the app or Git.
+
+## Controller contract
+
+The app invokes `/usr/bin/python3` with the bundled `Resources/operations/control.py`; no shell interpolation is used. Read-only commands are `status` and `diagnose`. Mutations are `start`, `stop`, `restart`, `rollback`, and `set-preferences`, all with `--apply`. Preferences are supplied as JSON on standard input. See `operations/control.py` for the authoritative JSON contract.
+
+Status commands time out after 15 seconds, read-only integrity checks after 120 seconds, and mutations after 300 seconds to leave time for verified startup and automatic recovery. On timeout the app terminates its controller request and reports the outcome as uncertain before refreshing; it does not blindly retry the action. The independently owned launchd service is never terminated just because the UI closes.
+
+The UI presents backend-authored error messages, not arbitrary stderr. Controller stdout/stderr use temporary private files to avoid pipe deadlock; these files are removed after the request. The app does not collect analytics or retain prompts, tokens, or pairing details.
+
+## Local checks
+
+```sh
+bash macos/tests/run.sh
+bash scripts/build-app.sh
+```
+
+The focused Swift checks exercise subprocess completion, JSON failure handling, timeout behavior, and readiness labels. They never control the installed service. Visual QA should also inspect Overview, Settings, Maintenance, window reopening, and the labeled preview mode.

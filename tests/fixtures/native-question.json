@@ -1,0 +1,79 @@
+{
+  "source": "Read-only desktop IPC snapshot of the authorized smoke turn",
+  "taskStatus": {
+    "type": "idle"
+  },
+  "turnStatus": "completed",
+  "question": {
+    "id": "synthetic-item-1",
+    "type": "agentMessage",
+    "phase": "final_answer",
+    "text": "V2 question smoke: choose a color.\n- Blue\n- Green",
+    "questions": [
+      {
+        "title": "V2 question smoke: choose a color.",
+        "options": [
+          "Blue",
+          "Green"
+        ]
+      }
+    ],
+    "delivery": "async"
+  },
+  "final": {
+    "id": "synthetic-item-2",
+    "type": "agentMessage",
+    "phase": "final_answer",
+    "text": "G2 V2 QUESTION OK",
+    "questions": null,
+    "delivery": null
+  },
+  "regressionFixture": {
+    "id": "synthetic-task",
+    "threadRuntimeStatus": {
+      "type": "idle",
+      "activeFlags": []
+    },
+    "requests": [],
+    "turns": [
+      {
+        "turnId": "synthetic-turn",
+        "status": "completed",
+        "params": {
+          "input": [
+            {
+              "type": "text",
+              "text": "Synthetic question test"
+            }
+          ]
+        },
+        "items": [
+          {
+            "id": "synthetic-item-1",
+            "type": "agentMessage",
+            "phase": "final_answer",
+            "text": "V2 question smoke: choose a color.\n- Blue\n- Green",
+            "questions": [
+              {
+                "title": "V2 question smoke: choose a color.",
+                "options": [
+                  "Blue",
+                  "Green"
+                ]
+              }
+            ],
+            "delivery": "async"
+          },
+          {
+            "id": "synthetic-item-2",
+            "type": "agentMessage",
+            "phase": "final_answer",
+            "text": "G2 V2 QUESTION OK",
+            "questions": null,
+            "delivery": null
+          }
+        ]
+      }
+    ]
+  }
+}

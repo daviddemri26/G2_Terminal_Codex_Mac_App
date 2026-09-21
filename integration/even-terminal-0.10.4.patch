@@ -1,0 +1,277 @@
+--- a/dist/routes/core.js
++++ b/dist/routes/core.js
+@@ -1,6 +1,7 @@
+ import { Router } from "express";
+ import { getDefaultProvider, isProvider, parseProvider, SUPPORTED_PROVIDERS } from "../session.js";
+-import { broadcast, pushMessage, getMessages } from "./events.js";
++import { broadcast, pushMessage, getMessages, sessionHasClients, setSessionWatchHandler } from "./events.js";
++import { createDesktopProvider } from "../desktop-bridge/provider.mjs";
+ import { createClaudeProvider } from "../claude/provider.js";
+ import { createClaudeSyncProvider } from "../claude-sync/provider.js";
+ import { USE_ORIGINAL_CLAUDE } from "../claude-sync/provider-name.js";
+@@ -49,7 +50,9 @@
+ const claudeSyncTransport = new ClaudeSyncTransport(emit);
+ const claudeProvider = createClaudeProvider(emit);
+ const claudeSyncProvider = createClaudeSyncProvider(emit, claudeSyncTransport);
+-const codexProvider = createCodexProvider(emit, () => codexClient);
++const desktopBridgeEnabled = process.env.EVEN_CODEX_DESKTOP_BRIDGE !== "0";
++const codexProvider = desktopBridgeEnabled ? createDesktopProvider(emit, { hasClients: sessionHasClients }) : createCodexProvider(emit, () => codexClient);
++if (desktopBridgeEnabled) setSessionWatchHandler((id, provider) => (provider || getDefaultProvider()) === "codex" ? codexProvider.watch(id) : Promise.resolve());
+ // const cursorProvider = createCursorProvider(emit);
+ // const opencodeProvider = createOpencodeProvider(emit);
+ const providerRegistry = {
+@@ -149,58 +152,51 @@
+         res.status(statusCode).json({ error: err.message });
+     }
+ });
+-// POST /api/permission-response
+-router.post("/permission-response", (req, res) => {
+-    const { sessionId, decision, provider } = req.body ?? {};
+-    console.log(`[permission-response] sessionId=${sessionId ?? "(none)"} provider=${provider ?? "(default)"} decision=${decision ?? "deny"}`);
+-    debugLog("api", "permission-response body", toOneLineJson(req.body ?? {}));
+-    if (!sessionId) {
+-        res.status(400).json({ error: "Missing 'sessionId'" });
+-        return;
+-    }
+-    const targetProvider = getProvider(provider);
+-    if (!targetProvider.getStatus(sessionId)) {
+-        res.status(404).json({ error: "Session not found" });
+-        return;
+-    }
+-    const accepted = targetProvider.respondPermission(sessionId, decision || "deny");
+-    if (accepted === false) {
+-        res.status(400).json({ error: "Permission decision was not offered or no permission request is pending" });
+-        return;
+-    }
+-    res.json({ ok: true });
+-});
+-// POST /api/question-response
+-router.post("/question-response", (req, res) => {
+-    const { sessionId, answer, provider } = req.body ?? {};
+-    console.log(`[question-response] sessionId=${sessionId ?? "(none)"} provider=${provider ?? "(default)"} answer=${String(answer ?? "skip").slice(0, 120)}`);
+-    debugLog("api", "question-response body", toOneLineJson(req.body ?? {}));
+-    if (!sessionId) {
+-        res.status(400).json({ error: "Missing 'sessionId'" });
+-        return;
+-    }
+-    const targetProvider = getProvider(provider);
+-    if (!targetProvider.getStatus(sessionId)) {
+-        res.status(404).json({ error: "Session not found" });
+-        return;
+-    }
+-    targetProvider.respondQuestion(sessionId, answer || "skip");
+-    res.json({ ok: true });
+-});
+-// POST /api/interrupt
+-router.post("/interrupt", (req, res) => {
++// Explicit, awaitable actions: never return success before a native response.
++const actionError = (res, error) => res.status(error.statusCode ?? (error.outcomeUnknown ? 504 : 409)).json({
++    error: error.message ?? String(error), outcomeUnknown: Boolean(error.outcomeUnknown)
++});
++router.post("/permission-response", async (req, res) => {
++    const { sessionId, decision, provider, requestId, actionToken } = req.body ?? {};
++    if (!sessionId || typeof decision !== "string" || !decision) {
++        res.status(400).json({ error: "Select the displayed approval choice first." }); return;
++    }
++    try {
++        const target = getProvider(provider);
++        const result = await target.respondPermission(sessionId, decision, { requestId, actionToken });
++        if (result === false) { res.status(409).json({ error: "This approval is not available." }); return; }
++        res.json(result ?? { ok: true });
++    } catch (error) { actionError(res, error); }
++});
++router.post("/question-response", async (req, res) => {
++    const { sessionId, answer, provider, requestId, actionToken } = req.body ?? {};
++    if (!sessionId || answer == null) {
++        res.status(400).json({ error: "Answer the displayed question first." }); return;
++    }
++    try {
++        const result = await getProvider(provider).respondQuestion(sessionId, answer, { requestId, actionToken });
++        res.json(result ?? { ok: true });
++    } catch (error) { actionError(res, error); }
++});
++router.post("/interrupt", async (req, res) => {
+     const { sessionId, provider } = req.body ?? {};
+-    if (!sessionId) {
+-        res.status(400).json({ error: "Missing 'sessionId'" });
+-        return;
+-    }
+-    const targetProvider = getProvider(provider);
+-    if (!targetProvider.getStatus(sessionId)) {
+-        res.status(404).json({ error: "Session not found" });
+-        return;
+-    }
+-    targetProvider.interrupt(sessionId);
+-    res.json({ ok: true });
++    if (!sessionId) { res.status(400).json({ error: "Select a task first." }); return; }
++    try { res.json(await getProvider(provider).interrupt(sessionId) ?? { ok: true }); }
++    catch (error) { actionError(res, error); }
++});
++// Optional richer clients can retain exact request IDs and presentation tokens.
++router.get("/desktop-bridge/actions", async (req, res) => {
++    const target = getProvider("codex");
++    if (!target.isDesktopBridge) { res.status(404).json({ error: "Desktop bridge is not enabled." }); return; }
++    try { res.json({ actions: await target.getActions(req.query.sessionId) }); }
++    catch (error) { actionError(res, error); }
++});
++router.post("/desktop-bridge/action-response", async (req, res) => {
++    const target = getProvider("codex");
++    if (!target.isDesktopBridge) { res.status(404).json({ error: "Desktop bridge is not enabled." }); return; }
++    const { sessionId, ...response } = req.body ?? {};
++    try { res.json(await target.respondAction(sessionId, response)); }
++    catch (error) { actionError(res, error); }
+ });
+ // GET /api/status
+ router.get("/status", (req, res) => {
+@@ -216,7 +212,7 @@
+         return;
+     }
+     res.json({
+-        state: status.state,
++        ...status,
+         sessionId,
+         provider: status.provider,
+     });
+@@ -245,6 +241,7 @@
+     const provider = req.query.provider || getDefaultProvider();
+     try {
+         if (provider === "codex") {
++            if (desktopBridgeEnabled) { res.json({ sessionId: id, history: await codexProvider.getHistory(id, 10), status: codexProvider.getStatus(id) }); return; }
+             const thread = await codexClient.threadRead(id, true);
+             res.json(thread);
+         }
+@@ -298,6 +295,7 @@
+ });
+ // Initialize the bridge connection before the remote CLI can create its thread.
+ router.post("/codex/ensure-app-server", async (_req, res) => {
++    if (desktopBridgeEnabled) { res.status(409).json({ error: "This bridge uses the Mac app. A separate Codex engine will not be started." }); return; }
+     try {
+         await codexClient.connect();
+         res.json({ started: true, port: CODEX_APP_SERVER_PORT });
+--- a/dist/routes/events.js
++++ b/dist/routes/events.js
+@@ -2,6 +2,8 @@
+ import { writeDebugLog } from "../logger.js";
+ import { redactTokenQueryParam } from "../http-log.js";
+ const router = Router();
++let sessionWatchHandler;
++export function setSessionWatchHandler(handler) { sessionWatchHandler = handler; }
+ // ── Per-session message ring buffer + SSE clients ────
+ const MAX_MESSAGES_PER_SESSION = 500;
+ const sessions = new Map();
+@@ -16,6 +18,16 @@
+ export function pushMessage(sessionId, msg) {
+     const s = getSession(sessionId);
+     const id = s.nextId++;
++    if (msg.type === "result" && s.activeTurnStartId !== null) {
++        // Keep public updates, question context, and the complete final answer.
++        const cleared = s.messages.findLast(entry => entry.msg.type === "task_progress" && entry.msg.current === "" && entry.msg.completed === entry.msg.total);
++        const ends = ["think_end", "text_end"].map(state => s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.type === "status" && entry.msg.state === state));
++        s.messages = s.messages.filter(entry => entry.id < s.activeTurnStartId || entry.msg.bridgePublicUpdate === true || entry.msg.bridgeFinalHeader === true || ["user_prompt", "user_question", "question_answer"].includes(entry.msg.type) || entry === cleared || ends.includes(entry));
++    }
++    if (msg.type === "task_progress" || msg.type === "running_stats") {
++        // Current progress and elapsed time never crowd out conversation replay.
++        s.messages = s.messages.filter(entry => entry.msg.type !== msg.type);
++    }
+     s.messages.push({ id, msg });
+     if (msg.type === "user_prompt" && s.activeTurnStartId === null)
+         s.activeTurnStartId = id;
+@@ -23,11 +35,11 @@
+         s.activeTurnStartId = id;
+     if (msg.type === "status" && msg.state === "idle")
+         s.activeTurnStartId = null;
+-    // Keep the active turn intact so a mid-turn client can replay its user prompt.
+-    const retainFrom = Math.min(id - MAX_MESSAGES_PER_SESSION + 1, s.activeTurnStartId ?? Infinity);
+-    const removeCount = s.messages.findIndex((entry) => entry.id >= retainFrom);
+-    if (removeCount > 0)
+-        s.messages.splice(0, removeCount);
++    if (s.messages.length > MAX_MESSAGES_PER_SESSION) {
++        const prompt = s.activeTurnStartId === null ? null : s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.type === "user_prompt");
++        const tail = s.messages.slice(-(MAX_MESSAGES_PER_SESSION - (prompt ? 1 : 0)));
++        s.messages = prompt && !tail.includes(prompt) ? [prompt, ...tail] : s.messages.slice(-MAX_MESSAGES_PER_SESSION);
++    }
+     return id;
+ }
+ export function getMessages(sessionId, after) {
+@@ -81,13 +93,15 @@
+     res.flushHeaders();
+     res.write(":ok\n\n");
+     const s = getSession(sessionId);
+-    if (req.query.needReplay === "true" && s.messages.length > 0) {
+-        // Replay buffered messages for this session
+-        for (const entry of s.messages) {
+-            res.write(`id: ${entry.id}\ndata: ${JSON.stringify(entry.msg)}\n\n`);
+-        }
++    const lastEventId = req.headers["last-event-id"];
++    const after = typeof lastEventId === "string" && /^\d+$/.test(lastEventId) ? Number(lastEventId) : null;
++    if (req.query.needReplay === "true" || after !== null) {
++        const canResume = after !== null && after < s.nextId;
++        const replay = canResume ? s.messages.filter(entry => entry.id > after) : s.messages;
++        for (const entry of replay) res.write(`id: ${entry.id}\ndata: ${JSON.stringify(entry.msg)}\n\n`);
+     }
+     s.clients.add(res);
++    if (sessionWatchHandler) Promise.resolve().then(() => sessionWatchHandler(sessionId, req.query.provider)).catch(err => console.warn(`[desktop-bridge] Unable to watch selected session: ${err.message}`));
+     console.log(`[sse] Client connected request=${redactTokenQueryParam(req.originalUrl)} session=${sessionId} `
+         + `(session clients: ${s.clients.size}, total: ${clientCount()})`);
+     // Heartbeat every 15s
+--- a/dist/codex/session.js
++++ b/dist/codex/session.js
+@@ -134,18 +134,35 @@
+         if (!this.activeCwd)
+             await this.start(undefined, defaultCodexCwd());
+         const cwd = this.activeCwd ?? defaultCodexCwd();
+-        if (!this.activeThreadId) {
+-            const thread = await this.client.threadStart({ cwd });
+-            const newId = String(thread?.id ?? "");
+-            if (!newId)
+-                throw new Error("Failed to create Codex thread");
+-            this.setThreadId(newId);
+-        }
+-        else {
+-            await this.client.threadResume({
+-                threadId: this.activeThreadId,
+-                cwd,
+-            });
++        // Local recovery patch: a failed resume must also settle the glasses UI.
++        // HTTP errors alone are not reliably reflected by the Even client.
++        try {
++            if (!this.activeThreadId) {
++                const thread = await this.client.threadStart({ cwd });
++                const newId = String(thread?.id ?? "");
++                if (!newId)
++                    throw new Error("Failed to create Codex thread");
++                this.setThreadId(newId);
++            }
++            else {
++                await this.client.threadResume({
++                    threadId: this.activeThreadId,
++                    cwd,
++                });
++            }
++        }
++        catch (err) {
++            const detail = String(err?.message ?? err ?? "Codex session could not start");
++            const writerConflict = /already has an active writer/i.test(detail);
++            const message = writerConflict
++                ? "Conversation ouverte dans une autre instance Codex. Utilisez une session Even Terminal et, sur le Mac, even-terminal codex. La demande n'a pas ete envoyee."
++                : `Codex n'a pas pu ouvrir cette session : ${detail}`;
++            this.send({ type: "error", message });
++            this.send({ type: "status", state: "idle", sessionId: this.activeThreadId, provider: "codex" });
++            const failure = new Error(message, { cause: err });
++            failure.statusCode = writerConflict ? 409 : (err?.statusCode ?? 500);
++            failure.rpcCode = err?.rpcCode;
++            throw failure;
+         }
+         const threadId = this.activeThreadId;
+         recordThreadMeta(threadId, cwd, prompt);
+@@ -190,6 +207,10 @@
+         if (threadId && turnId) {
+             this.client.turnInterrupt(threadId, turnId).catch(() => { });
+         }
++        else if (threadId && !this._busy) {
++            // An idle server can still have a stale spinner on the phone.
++            this.send({ type: "status", state: "idle", sessionId: threadId, provider: "codex" });
++        }
+     }
+     async close() {
+         this.interrupt();

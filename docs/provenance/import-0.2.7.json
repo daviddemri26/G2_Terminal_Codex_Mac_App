@@ -1,0 +1,48 @@
+{
+  "format": 1,
+  "name": "G2 Desktop Bridge source",
+  "bridgeVersion": "0.2.7",
+  "desktopBuild": {
+    "version": "26.915.31945",
+    "build": "9922"
+  },
+  "evenTerminalVersion": "0.10.4",
+  "validation": {
+    "nodeTests": 126,
+    "pythonTests": 25,
+    "total": 151
+  },
+  "archiveOnlyTransformations": {
+    "bridge/provider.test.mjs": "Replaced real task UUID with synthetic UUID 11111111-1111-4111-8111-111111111111.",
+    "verify_install.py": "Replaced literal task UUID with required G2_BRIDGE_TEST_TASK_ID environment input.",
+    "test_http_bridge.py": "Replaced literal task UUID with required G2_BRIDGE_TEST_TASK_ID environment input."
+  },
+  "sanitization": "Authorized Blue/Green smoke-test snapshot only, with generated item IDs replaced. No physical Cafe test capture, real task IDs, configuration, logs, tokens, journals, extracted desktop source or dependencies are included. Tea/coffee values in unit tests are mocked inputs. Historical 0.2.1 status traces are omitted.",
+  "files": {
+    "README.md": "89f82ae9d50065fba7d5e28e3da0a44c145455b7c3cbfa0df4446f0ca3139ef4",
+    "bridge/activity.mjs": "8704199420f27e163506dff8f83696c883b74f42203291b1466dc10ad52435c7",
+    "bridge/activity.test.mjs": "b4d02e81ecc0523c3bdbb4ef87bef22f8951b9ef526cf44333c465b7ffc9528d",
+    "bridge/catalog.py": "1de1b3f636a58970c393deab9feb19f4bc4d3143b82184203e6282c20841c4bf",
+    "bridge/client-contract.mjs": "cce9cfc5806ad74df1878eda02982395586c8dfd70cb4a49556841f392687989",
+    "bridge/delivery-store.mjs": "10fd3a7259ec23d8fc45306abc8ab07be850afc5aaa72929a6ad6dc32e1e43a0",
+    "bridge/delivery-store.test.mjs": "84fc74a8664480ced9b1da0f89a08402aca8777f9885637427ff401ac89c68be",
+    "bridge/desktop-ipc.mjs": "24a58e61a293fec4f2227b6f4a5658bb8d0db197bf697096fcca098f587d90ac",
+    "bridge/desktop-ipc.test.mjs": "abcf2cf58a65a13a2f9a2ae74fa3fd476f311efd011b3154a04be4a54f53bd50",
+    "bridge/provider.mjs": "3bec1546081f5dad16871b55df24f18267f902b741deea71e47598826846d153",
+    "bridge/provider.test.mjs": "ffda9013b0c29e48df861b2d313e09be8d2d771608085ef685f086462e31569a",
+    "client-contract/README.md": "211a0594d6d69a6a6320a68ebe2bfa64ab9d7214b31ddd040f84aa34a936095c",
+    "client-contract/client-contract.mjs": "cce9cfc5806ad74df1878eda02982395586c8dfd70cb4a49556841f392687989",
+    "client-contract/client-contract.test.mjs": "f5d2066972e3fc8466c956b17691b1b379d70c347ffbfa19386baec1c3df3547",
+    "events.test.mjs": "49d673299a1d2139e01030d13ac9fcb1b21c53cbfae28e58a9f48ad62711b031",
+    "live-question-test/native-snapshot.json": "b9a707aa9a416e74ab43b6deb89fcbcfe4ed8a5b1be2d6349e4b4b06d1dbd5fe",
+    "operations/README.md": "2822742a594859a0327160f99dfe623ca9e905c4e5eec64f0093f954b8784764",
+    "operations/com.evencodex.desktop-bridge.plist": "829e872fb166b939beaab17ed85205a77df8b132024d8cf74fcc3b67387ecba7",
+    "operations/common.py": "bdd4574f4deab9d59c5d8c1ceb880cad303e08fa90da0806779d814e0295b38f",
+    "operations/manage.py": "4daa6a3b57f85cce4adbda2f4f5bc2cd4957894a883e45f7f2058c0a2d351442",
+    "operations/supervisor.py": "19e22d75166f051299cacbd46fea1c2507bdf842af26f901da6bf5408637cac0",
+    "operations/test_operations.py": "8de8b59585bcbd7c28f51c411313ca6f73e87b68273314c06942c696b1174512",
+    "prepare_package.py": "93ed05af5010aa715ea05bf1080c9e466f8d62cd148e938bdcec55b1f12d5064",
+    "test_http_bridge.py": "3baf2768d45c00f620d91ba49b63538ebb4c75dc926b603047aff08fd6b93e15",
+    "verify_install.py": "5b840566ed76c6ae4e153a5407bd0d0705257e69a4ed542af0e11974b3771ae4"
+  }
+}
