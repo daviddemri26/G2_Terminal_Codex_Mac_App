@@ -146,7 +146,7 @@ def create_config(path, project):
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
     value = {'version': 1, 'provider': 'codex', 'cwd': str(project),
              'network': {'mode': 'tailscale'}, 'port': 3456,
-             'token': secrets.token_hex(32), 'name': 'G2 Bridge',
+             'token': secrets.token_hex(32), 'name': 'Even Terminal for Codex Mac App',
              'claude': {'useSystemCli': False}}
     with os.fdopen(descriptor, 'w') as stream:
         json.dump(value, stream, indent=2)
@@ -204,7 +204,7 @@ def create(source, node, payload, support=common.DEFAULT_SUPPORT, config_path=co
         manage.switch_release(support, record, None, config)
         manage.prune_releases(support, record)
     return {'ok': True, 'complete': True, 'installed': True, 'configurationPreserved': preserved,
-            'message': 'The bridge is installed. Open G2 Bridge, then Connect to show the pairing code.'}
+            'message': 'The bridge is installed. Open Even Terminal for Codex Mac App, then Connect to show the pairing code.'}
 
 
 def pair(support=common.DEFAULT_SUPPORT, reveal=False):

@@ -1,4 +1,4 @@
-"""Small JSON-only interface for the native G2 Bridge control application.
+"""Small JSON-only interface for the native Even Terminal for Codex Mac App control application.
 
 No command sends prompts, starts a Codex engine, exposes configuration tokens,
 or selects arbitrary executables. Read-only polling does not hash runtime files.

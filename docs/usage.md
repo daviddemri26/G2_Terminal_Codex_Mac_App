@@ -1,6 +1,6 @@
-# Using G2 Bridge
+# Using Even Terminal for Codex Mac App
 
-Open **G2 Bridge** from `/Applications/G2 Bridge.app` or its Dock icon. This
+Open **Even Terminal for Codex Mac App** from `/Applications/Even Terminal for Codex Mac App.app` or its Dock icon. This
 window manages the local background service; your conversations stay in the
 Codex Mac app and Even Terminal.
 
@@ -21,7 +21,7 @@ release to reconcile an uncertain delivery; starting it never resends that messa
 **Open Mac App** opens the installed Codex app when the bridge is waiting
 for it. Stopping the bridge leaves the Mac task engine running.
 
-Closing the window or choosing Quit G2 Bridge leaves the service running. Click
+Closing the window or choosing Quit Even Terminal for Codex Mac App leaves the service running. Click
 the Dock icon again to reopen the window. The window does not need to stay open
 for the glasses to work.
 

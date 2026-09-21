@@ -142,11 +142,11 @@ final class BridgeModel: ObservableObject {
 
     private func execute(_ command: String, apply: Bool = false, input: Data? = nil, timeout: TimeInterval) async throws -> CommandResult {
         guard let resources = Bundle.main.resourceURL else {
-            throw ControlFailure.message("The app’s control files are missing. Reinstall G2 Bridge.")
+            throw ControlFailure.message("The app’s control files are missing. Reinstall Even Terminal for Codex Mac App.")
         }
         let script = resources.appendingPathComponent("operations/control.py")
         guard FileManager.default.fileExists(atPath: script.path) else {
-            throw ControlFailure.message("The app’s control files are missing. Reinstall G2 Bridge.")
+            throw ControlFailure.message("The app’s control files are missing. Reinstall Even Terminal for Codex Mac App.")
         }
         var arguments = [script.path, command]
         if apply { arguments.append("--apply") }

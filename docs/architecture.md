@@ -1,6 +1,6 @@
 # Architecture
 
-G2 Bridge has three parts: the source repository, an installed background service,
+Even Terminal for Codex Mac App has three parts: the source repository, an installed background service,
 and a native control app. Only the repository is edited. The installed service is
 a frozen copy of a reviewed build, with its own dependencies and integrity record.
 
@@ -14,7 +14,7 @@ Even Terminal on phone/glasses
        User LaunchAgent
               ▲
               │ local status/control commands
-       G2 Bridge.app
+       Even Terminal for Codex Mac App.app
 ```
 
 The control window is not in the message path. It calls the bundled
@@ -38,6 +38,10 @@ Build metadata records its input hashes. The development runtime links to local
 and rejects links escaping that frozen package.
 
 ## Local storage
+
+The product is named **Even Terminal for Codex Mac App**. Existing internal names such
+as `EvenCodexBridge` and the LaunchAgent label remain stable so a display-name
+change does not move private data, break pairing, or replace the running service.
 
 | Location | Contents and ownership |
 | --- | --- |

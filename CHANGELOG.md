@@ -1,5 +1,16 @@
 # Change log
 
+## Control app 1.1.1 / Even Hub guide 0.1.1 — 2026-09-21
+
+- Rename the Mac application and source installer to **Even Terminal for Codex Mac App**.
+- Use **Even Terminal for Codex Mac App Guide** for the optional Even Hub setup
+  companion, shortened to **Codex Mac App Guide** in the Hub manifest, phone
+  masthead, and native menu to meet the store's naming rules.
+- Update application labels, documentation, and the setup website to explain
+  the audience and purpose directly. Existing repository links remain unchanged.
+- Preserve the bridge runtime 0.2.8, service identities, and private data paths.
+  This is a product-name change, not a network or conversation migration.
+
 ## Control app 1.1.0 / bridge 0.2.8 — 2026-09-21
 
 - Add Text settings for timestamps, public progress updates, and paragraph spacing.

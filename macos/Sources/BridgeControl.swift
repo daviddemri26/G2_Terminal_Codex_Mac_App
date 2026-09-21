@@ -159,7 +159,7 @@ enum CommandRunner {
             let inputPipe = Pipe()
             process.standardInput = inputPipe
             do { try process.run() }
-            catch { throw ControlFailure.message("The local bridge controller could not be opened. Reinstall G2 Bridge and verify that Python 3 is available.") }
+            catch { throw ControlFailure.message("The local bridge controller could not be opened. Reinstall Even Terminal for Codex Mac App and verify that Python 3 is available.") }
             if let input { try? inputPipe.fileHandleForWriting.write(contentsOf: input) }
             try? inputPipe.fileHandleForWriting.close()
             let deadline = Date().addingTimeInterval(timeout)

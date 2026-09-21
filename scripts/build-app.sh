@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP="$ROOT/.build/G2 Bridge.app"
+APP="$ROOT/.build/Even Terminal for Codex Mac App.app"
 ARCH="$(uname -m)"
 if [[ "$ARCH" != "arm64" && "$ARCH" != "x86_64" ]]; then
   echo "Unsupported architecture: $ARCH" >&2

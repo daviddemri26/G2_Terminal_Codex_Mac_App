@@ -1,6 +1,6 @@
-# Your first conversation on G2
+# Set up Even Terminal for Codex Mac App
 
-G2 Bridge is for **Even G2 owners who use Even Terminal and the Codex Mac app**.
+Even Terminal for Codex Mac App is for **Even G2 owners who use Even Terminal and the Codex Mac app**.
 You can keep working in that Mac app, then find and continue the same supported
 conversation from your glasses. You do not need a separate Codex CLI workflow.
 
@@ -20,7 +20,7 @@ identity in `Codex.app` or `ChatGPT.app`, in Applications or your user
 Applications folder. It checks the actual version and build. Consult [compatibility.json](../compatibility.json) before
 installing if your app is newer or older.
 
-If the version is different, stop here and check for a reviewed G2 Bridge update.
+If the version is different, stop here and check for a reviewed Even Terminal for Codex Mac App update.
 Do not bypass the compatibility check or obtain old Mac app builds from unknown
 download sites. The [official Mac app guide](https://learn.chatgpt.com/docs/app)
 explains OpenAI's app; its newest download is not automatically supported by this
@@ -63,13 +63,13 @@ and QR flow because their current public address cannot be safely inferred. See
 the [network guide](network-options.md). No network-mode switch is added.
 
 If a LAN/interface address changes, finish the current interaction and use
-**Restart** in G2 Bridge when it is safe and available. Then show and scan a new
+**Restart** in Even Terminal for Codex Mac App when it is safe and available. Then show and scan a new
 pairing QR code. Showing a new QR alone does not reconnect the running bridge to
 the changed address.
 
 ## 3. Prepare the Mac once
 
-The current installer builds G2 Bridge on your own Mac. Apple's Command Line Tools
+The current installer builds Even Terminal for Codex Mac App on your own Mac. Apple's Command Line Tools
 provide the compiler and Python it needs. Swift 6 or later is required; the
 installer checks this and explains when Apple tools need an update. If these tools are missing, open the
 Mac's **Terminal** application, paste this line, and press Return:
@@ -86,15 +86,15 @@ The installer uses Node 26.9.0 to run the bridge. If that exact version is not
 available, it obtains the official pinned download and checks its recorded
 checksum. You do not have to set up Homebrew or install a global npm package.
 
-## 4. Install G2 Bridge
+## 4. Install Even Terminal for Codex Mac App
 
 1. [Download this repository as a ZIP](https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/archive/refs/heads/main.zip).
 2. Double-click the ZIP to expand it. Keep the complete extracted folder together.
-3. Open that folder and double-click **Install G2 Bridge.command**.
+3. Open that folder and double-click **Install Even Terminal for Codex Mac App.command**.
 4. Read the checks and follow the instructions in its window. It restores locked
    dependencies, runs offline tests, builds the app, and installs the background
    service and control window.
-5. Open **G2 Bridge** from Applications.
+5. Open **Even Terminal for Codex Mac App** from Applications.
 
 The first run needs internet access for the verified runtime and locked
 dependencies. The app is built locally with a local signature; it is not Apple
@@ -104,7 +104,7 @@ that the installer came from this repository. After the blocked attempt, open
 then confirm **Open** if you trust it. See [Apple's instructions](https://support.apple.com/en-us/102445).
 Do not override a malware or damaged-file warning, or turn off system-wide security.
 
-The standard destination is `/Applications/G2 Bridge.app`, beside your other
+The standard destination is `/Applications/Even Terminal for Codex Mac App.app`, beside your other
 apps. If that folder is not writable, the installer explains the per-user
 alternative in `~/Applications`. Both are valid macOS app locations. The service,
 credentials, and preferences remain private to your Mac user in either case.
@@ -117,14 +117,14 @@ the [maintenance guide](maintenance.md) for an update.
 
 ## 5. Pair in the Even Realities app
 
-In **G2 Bridge → Connect**, show the pairing QR code. On your phone, open the
+In **Even Terminal for Codex Mac App → Connect**, show the pairing QR code. On your phone, open the
 Even Realities app, enable **Terminal Mode** in Settings, then scan that QR code.
 Use the official [Even Terminal guide](https://www.evenrealities.com/terminal) for
 the current phone screens, glasses pairing, and ring/voice controls.
 
 Use **this bridge's QR code**. The vendor's generic host installation commands
 describe its normal coding-agent workflow; you do not need to install and start
-another host alongside G2 Bridge.
+another host alongside Even Terminal for Codex Mac App.
 
 The QR code contains a private connection credential. Show it only to your phone;
 do not include it in a public screenshot or GitHub issue. You do not need to copy
@@ -133,7 +133,7 @@ the token or type an address manually.
 ## 6. Check that it works
 
 1. Keep the Mac logged in and awake, with Codex and the configured network available.
-2. In G2 Bridge, check the overview. A ready state means its local checks pass.
+2. In Even Terminal for Codex Mac App, check the overview. A ready state means its local checks pass.
 3. On the phone/glasses, select a Codex conversation whose title you recognize.
 4. Confirm that the expected history appears. Send a harmless message only in a
    conversation you intentionally choose for this test.
@@ -144,7 +144,7 @@ seeing “ready” alone cannot prove the phone/glasses connection works.
 
 ## Make the text comfortable
 
-Open **G2 Bridge → Text**. The original presentation is selected by default.
+Open **Even Terminal for Codex Mac App → Text**. The original presentation is selected by default.
 
 | Option | Default | What it changes |
 | --- | --- | --- |
@@ -164,7 +164,7 @@ in the Even Realities app where available. Code-block whitespace is preserved.
 
 Leave **Launch at login** enabled if you want the bridge to start whenever you
 sign into this Mac. It does not launch Codex or Tailscale for you, prevent sleep,
-or run before login. Closing or quitting G2 Bridge leaves the background service
+or run before login. Closing or quitting Even Terminal for Codex Mac App leaves the background service
 running.
 
 To keep the control window handy, right-click its Dock icon and select
@@ -183,7 +183,7 @@ is no second copy of your task engine to manage.
 | Delivery needs confirmation | Inspect the Mac conversation before retrying; do not resend blindly |
 | Installation needs attention | Open Maintenance → Check Installation and follow the reported action |
 
-For an issue report, include your G2 Bridge version, macOS, Mac app version/build,
+For an issue report, include your Even Terminal for Codex Mac App version, macOS, Mac app version/build,
 Even phone-app version, and G2 firmware version. Include only the safe diagnostic
 summary, never the pairing QR, token, raw logs, or private conversation text.
 

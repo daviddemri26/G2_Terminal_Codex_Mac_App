@@ -1,10 +1,12 @@
 {
-  "name": "g2-bridge-guide",
-  "version": "0.1.0",
+  "name": "even-terminal-for-codex-mac-app-guide",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
-  "description": "An offline Even Hub companion guide for G2 Bridge.",
-  "engines": { "node": "26.9.0" },
+  "description": "An offline Even Hub companion guide for Even Terminal for Codex Mac App.",
+  "engines": {
+    "node": "26.9.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build && node scripts/copy-notices.mjs",

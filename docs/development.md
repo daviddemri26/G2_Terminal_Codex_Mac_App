@@ -46,10 +46,10 @@ upstream package and patched file hashes live in `integration/upstream.json`.
 ```sh
 bash scripts/build-app.sh
 bash macos/tests/run.sh
-open -n '.build/G2 Bridge.app' --args --preview
+open -n '.build/Even Terminal for Codex Mac App.app' --args --preview
 ```
 
-The build produces `.build/G2 Bridge.app`. The focused Swift checks exercise
+The build produces `.build/Even Terminal for Codex Mac App.app`. The focused Swift checks exercise
 subprocesses, decoding, timeouts, and readiness labels with synthetic input.
 Preview uses synthetic status and disabled service controls; it does not poll or
 change the installed service. Navigation buttons can still open other apps.
@@ -69,8 +69,8 @@ python3 scripts/install-app.py
 python3 scripts/install-app.py --apply
 ```
 
-The default destination is `/Applications/G2 Bridge.app`. Use
-`--destination "$HOME/Applications/G2 Bridge.app"` for an explicit per-user installation. The installer checks
+The default destination is `/Applications/Even Terminal for Codex Mac App.app`. Use
+`--destination "$HOME/Applications/Even Terminal for Codex Mac App.app"` for an explicit per-user installation. The installer checks
 bundle identity and signature, refuses to replace the app while its window
 process is running, and saves the previous app separately when replacing it.
 It does not change the background bridge. Rebuild/reinstall the control app after

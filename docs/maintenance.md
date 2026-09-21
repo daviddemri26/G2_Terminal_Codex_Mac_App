@@ -1,6 +1,6 @@
 # Maintenance
 
-Use G2 Bridge for ordinary status, start/stop, launch-at-login settings, diagnostics,
+Use Even Terminal for Codex Mac App for ordinary status, start/stop, launch-at-login settings, diagnostics,
 and rollback. Runtime updates are reviewed local installations; there is no remote
 update feed or automatic download of GitHub code.
 

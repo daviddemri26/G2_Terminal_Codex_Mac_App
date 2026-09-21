@@ -1,5 +1,9 @@
 # Source migration
 
+Historical record: this release used the name **G2 Bridge**. The current product
+name is **Even Terminal for Codex Mac App**; former names and installation paths below
+are preserved as evidence of that release.
+
 The project began in dated working folders with an already patched global Even
 Terminal package. This repository becomes the editable reference while the
 separately installed bridge keeps its existing configuration and release history.

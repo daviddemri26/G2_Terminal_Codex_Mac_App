@@ -17,11 +17,11 @@ private enum Section: String, CaseIterable {
         switch self { case .overview: "square.grid.2x2"; case .text: "textformat"; case .connect: "qrcode"; case .settings: "slider.horizontal.3"; case .maintenance: "wrench.and.screwdriver" }
     }
     var heading: String {
-        switch self { case .overview: "Your bridge, at a glance."; case .text: "Make room for your words."; case .connect: "From your Mac to your glasses."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
+        switch self { case .overview: "Codex on your G2, at a glance."; case .text: "Make room for your words."; case .connect: "From your Mac to your glasses."; case .settings: "Make yourself at home."; case .maintenance: "Keep things running." }
     }
     var description: String {
         switch self {
-        case .overview: "A quiet connection between your Mac and Even Terminal."
+        case .overview: "Connect the Codex Mac app to Even Terminal."
         case .text: "Choose how messages are presented in Even Terminal."
         case .connect: "Your existing Codex conversations, within reach."
         case .settings: "A few simple preferences for everyday use."
@@ -121,13 +121,18 @@ struct BridgeWindow: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Image(systemName: "eyeglasses").font(.system(size: 23, weight: .medium)).foregroundStyle(Palette.accent)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("G2 Bridge").font(.system(size: 16, weight: .semibold))
-                    Text("MAC COMPANION").font(.system(size: 8, weight: .semibold)).tracking(1.4).foregroundStyle(Palette.secondary)
-                }
-            }.padding(.horizontal, 21).padding(.top, 53).padding(.bottom, 36)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "eyeglasses").font(.system(size: 23, weight: .medium)).foregroundStyle(Palette.accent)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Even Terminal").font(.system(size: 13, weight: .semibold))
+                        Text("for Codex Mac App").font(.system(size: 11, weight: .medium))
+                    }.fixedSize(horizontal: true, vertical: false)
+                }.accessibilityElement(children: .ignore).accessibilityLabel("Even Terminal for Codex Mac App")
+                Text("Even Terminal · Codex Mac app")
+                    .font(.system(size: 9)).foregroundStyle(Palette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }.padding(.horizontal, 21).padding(.top, 53).padding(.bottom, 28)
             VStack(spacing: 6) {
                 ForEach(Section.allCases, id: \.self) { section in
                     Button { selection = section } label: {
@@ -151,7 +156,8 @@ struct BridgeWindow: View {
                 Text("The service works independently\nof this window.").font(.system(size: 10)).foregroundStyle(Palette.secondary).lineSpacing(3)
                 Button { model.openGuide() } label: { Label("Setup guide", systemImage: "book") }
                     .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(Palette.accent).padding(.top, 6)
-                Text("G2 Bridge 1.1").font(.system(size: 10)).foregroundStyle(Palette.secondary.opacity(0.7)).padding(.top, 4)
+                Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")")
+                    .font(.system(size: 10)).foregroundStyle(Palette.secondary.opacity(0.7)).padding(.top, 4)
             }.padding(.horizontal, 23).padding(.bottom, 25)
         }.frame(width: 187).background(Palette.sidebar)
     }

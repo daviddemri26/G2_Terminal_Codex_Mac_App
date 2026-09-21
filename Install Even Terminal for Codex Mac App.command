@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 unset NODE_OPTIONS NODE_PATH PYTHONPATH PYTHONHOME DYLD_INSERT_LIBRARIES
-echo "G2 Bridge — guided setup"
+echo "Even Terminal for Codex Mac App — guided setup"
 echo
 if ! /usr/bin/xcode-select -p >/dev/null 2>&1; then
   echo "One-time prerequisite: install Apple's Command Line Tools."

@@ -2,7 +2,7 @@
 
 **For a new guided setup, Tailscale is the default. An existing LAN or named-interface
 configuration can be preserved without requiring it.** Even Terminal can connect a phone to a Mac
-on the same local network. G2 Bridge preserves a valid existing Codex profile
+on the same local network. Even Terminal for Codex Mac App preserves a valid existing Codex profile
 instead of changing its network or pairing credential. Tailscale remains the
 physically reviewed path here and also works across different networks.
 
@@ -11,7 +11,7 @@ It does not switch an existing installation or add a network selector to the app
 
 ## Choose the connection that fits
 
-| Connection | What you need | Advantages | Limits in G2 Bridge today |
+| Connection | What you need | Advantages | Limits in Even Terminal for Codex Mac App today |
 | --- | --- | --- | --- |
 | **Tailscale — current guided setup** | Tailscale on both Mac and phone, connected to the same private network | Stable private address; encrypted device connection; can work away from home | An extra app and account on both devices; access rules must allow the connection |
 | **Same Wi-Fi / LAN — existing profiles** | Phone and Mac on a network that permits device-to-device traffic | No additional network account; useful at home | Existing valid profiles and QR pairing supported in software; not physically validated here; address can change; guest Wi-Fi may isolate devices; HTTP has no TLS |
@@ -64,7 +64,7 @@ can create a pairing QR for the currently resolved LAN/interface address only
 after an authenticated check of the running bridge. It does not start a second
 host. The running bridge does not automatically bind to a changed LAN/interface
 address. If that address changes, finish the current interaction, use **Restart**
-in G2 Bridge when it is safe and available, then show and scan the new pairing QR
+in Even Terminal for Codex Mac App when it is safe and available, then show and scan the new pairing QR
 code. Refreshing the QR alone does not move the running service to the new address.
 
 The helper refuses an existing `expose` profile rather than guessing a public
@@ -91,5 +91,5 @@ been changed as part of this research.
 - [Tailscale on macOS](https://tailscale.com/docs/concepts/macos-variants): choose and install a Mac variant.
 - [Tailscale on iOS](https://tailscale.com/docs/install/ios) or [Android](https://tailscale.com/docs/install/android): phone installation.
 
-The vendor pages may describe newer releases. G2 Bridge's supported combination
+The vendor pages may describe newer releases. Even Terminal for Codex Mac App's supported combination
 is always the one recorded in [compatibility.json](../compatibility.json).

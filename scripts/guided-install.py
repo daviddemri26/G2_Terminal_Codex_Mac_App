@@ -31,17 +31,17 @@ def run(arguments, environment):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--destination', type=Path, default=Path('/Applications/G2 Bridge.app'))
+    parser.add_argument('--destination', type=Path, default=Path('/Applications/Even Terminal for Codex Mac App.app'))
     parser.add_argument('--check', action='store_true', help='Show prerequisites only; do not install or download.')
     args = parser.parse_args()
     if platform.system() != 'Darwin' or int(platform.mac_ver()[0].split('.')[0] or '0') < 14:
-        raise common.BridgeError('G2 Bridge requires macOS 14 or newer.')
+        raise common.BridgeError('Even Terminal for Codex Mac App requires macOS 14 or newer.')
     if not sys.stdin.isatty() and not args.check:
-        raise common.BridgeError('Open Install G2 Bridge.command to use the guided installer interactively.')
+        raise common.BridgeError('Open Install Even Terminal for Codex Mac App.command to use the guided installer interactively.')
     # Preserve an already managed installation before any download, dependency
     # restoration, config generation, or installer mutation.
     if (common.DEFAULT_SUPPORT / 'control.json').exists():
-        raise common.BridgeError('G2 Bridge is already installed. This first-run installer did not change it. Open G2 Bridge or follow the update guide: ' + GUIDE)
+        raise common.BridgeError('Even Terminal for Codex Mac App is already installed. This first-run installer did not change it. Open Even Terminal for Codex Mac App or follow the update guide: ' + GUIDE)
     node_tool = load_script('ensure-node')
     candidate = node_tool.ensure_node()
     check = setup.inspect(node=candidate['node'] if candidate['ready'] else None)
@@ -67,18 +67,18 @@ def main():
         return 0
     destination = args.destination.expanduser().absolute()
     if not destination.parent.is_dir() or not os.access(destination.parent, os.W_OK):
-        if destination != Path('/Applications/G2 Bridge.app'):
+        if destination != Path('/Applications/Even Terminal for Codex Mac App.app'):
             raise common.BridgeError('The selected application folder is unavailable or not writable.')
         print('\nThis account cannot write to the shared Applications folder.')
         answer = input('Install only for your Mac account in ~/Applications instead? [y/N] ').strip().lower()
         if answer not in ('y', 'yes'):
             raise common.BridgeError('Installation cancelled. No service was installed.')
-        destination = Path.home() / 'Applications/G2 Bridge.app'
+        destination = Path.home() / 'Applications/Even Terminal for Codex Mac App.app'
     print('\nThis will:')
     if not candidate['ready']:
         print('  • Download Node ' + common.EXPECTED_NODE_VERSION + ' from nodejs.org and verify its pinned checksum.')
     print('  • Download locked npm dependencies and build/test this source locally.')
-    print('  • Install G2 Bridge at ' + str(destination) + '.')
+    print('  • Install Even Terminal for Codex Mac App at ' + str(destination) + '.')
     print('  • Register a service for your login; preserve any existing pairing/network settings.')
     print('  • Keep your Codex Mac app as the only task engine. No test prompts are sent.')
     print('\nThis alpha builds locally and is not an Apple-notarized public download.')
@@ -105,13 +105,13 @@ def main():
     # Validate and install the window app before starting a service. If setup
     # later fails, the window remains available to explain its current status.
     app_installer = load_script('install-app')
-    app_installer.install(ROOT / '.build/G2 Bridge.app', destination, apply=True)
+    app_installer.install(ROOT / '.build/Even Terminal for Codex Mac App.app', destination, apply=True)
     print('\nInstalling the verified background service…', flush=True)
     result = setup.create(ROOT / '.build/runtime', node, {'projectDirectory': project} if project else {})
     print(result['message'])
     subprocess.run(['/usr/bin/open', str(destination)], check=True)
-    print('\nIn G2 Bridge, open Connect → Show pairing code. Scan it from Even Terminal in the Even app.')
-    print('Keep pairing codes private. Closing G2 Bridge leaves the background connection running.')
+    print('\nIn Even Terminal for Codex Mac App, open Connect → Show pairing code. Scan it from Even Terminal in the Even app.')
+    print('Keep pairing codes private. Closing Even Terminal for Codex Mac App leaves the background connection running.')
     print('Guide: ' + GUIDE)
     return 0
 

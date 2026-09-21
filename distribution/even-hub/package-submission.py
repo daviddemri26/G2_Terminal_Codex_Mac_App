@@ -14,10 +14,10 @@ APP = ROOT / 'even-hub'
 def main():
     manifest = json.loads((APP / 'app.json').read_text())
     version = manifest['version']
-    package = APP / '.build' / f'G2-Bridge-Guide-{version}.ehpk'
+    package = APP / '.build' / f'even-terminal-for-codex-mac-app-guide-{version}.ehpk'
     if not package.is_file():
         raise SystemExit('Build and pack the companion first; see even-hub/README.md.')
-    out = ROOT / '.build' / f'G2-Bridge-Guide-{version}-submission-draft'
+    out = ROOT / '.build' / f'Even-Terminal-for-Codex-Mac-App-Guide-{version}-submission-draft'
     out.mkdir(parents=True, exist_ok=True)
     names = ['listing.md', 'privacy.md', 'review-notes.md', 'validation.md']
     files = []
@@ -30,27 +30,32 @@ def main():
     files.append(target)
     assets = out / 'assets'
     assets.mkdir(exist_ok=True)
-    for name in ('icon-24.png', 'background-draft.png', 'phone-review.png'):
-        source = ROOT / '.build/even-hub-assets' / name
+    for name, source_name in (
+        ('icon-24.png', 'icon-24.png'),
+        ('background-draft.png', 'background-draft.png'),
+        ('phone-review.png', f'phone-review-{version}.png'),
+    ):
+        # A capture from a previous version is not evidence for this candidate.
+        source = ROOT / '.build/even-hub-assets' / source_name
         if source.is_file():
             target = assets / name
             shutil.copyfile(source, target)
             files.append(target)
     readme = out / 'START-HERE.md'
-    readme.write_text('''# G2 Bridge Guide — submission draft
+    readme.write_text('''# Even Terminal for Codex Mac App Guide — submission draft
 
 This is a local review package. It has not been uploaded, submitted, or approved.
 
 - `listing.md`: English copy for the listing.
-- `G2-Bridge-Guide-''' + version + '''.ehpk`: packaged guide companion.
+- `even-terminal-for-codex-mac-app-guide-''' + version + '''.ehpk`: packaged guide companion.
 - `privacy.md`: draft notice to review and publish at a public URL.
 - `review-notes.md`: purpose, test steps, and pending publisher details.
 - `validation.md`: completed checks and exact limits; read before submission.
-- `assets/`: original icon, proposed background, and phone-view review image.
+- `assets/`: original icon, proposed background, and current-version phone-view image when available.
 - `checksums.json`: file hashes for this local package.
 
 Native glasses screenshots and physical device validation remain outstanding.
-The phone review image is not a substitute for glasses screenshots. Confirm
+Any phone review image is not a substitute for glasses screenshots. Confirm
 package ID availability and portal field/image requirements during private testing.
 
 The guide does not install or replace the Mac bridge or Even Terminal.

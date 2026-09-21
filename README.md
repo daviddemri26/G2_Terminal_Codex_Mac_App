@@ -1,6 +1,6 @@
-# G2 Bridge
+# Even Terminal for Codex Mac App
 
-**Use your Codex Mac conversations from Even G2 glasses.**
+**Use your Codex Mac app conversations in Even Terminal on G2 glasses.**
 
 This is for people who use **Even G2 + Even Terminal** and do their work in the
 **Codex Mac app**, without running Codex in a terminal. Find an existing Mac
@@ -31,7 +31,7 @@ and starts when you sign in. Closing the window leaves it running.
 - Pair your phone with a QR code, check status, set launch at login, and run diagnostics.
 
 The glasses still control their own font, brightness, wrapping, and built-in
-labels. G2 Bridge does not reproduce every Mac control. See the
+labels. Even Terminal for Codex Mac App does not reproduce every Mac control. See the
 [interaction details](client-contract/README.md) for precise support.
 
 ## Start here
@@ -41,9 +41,9 @@ labels. G2 Bridge does not reproduce every Mac control. See the
 2. **Connect Tailscale on your Mac and phone** for the guided first setup. If you
    already use a different Even Terminal connection, read the [network guide](docs/network-options.md).
 3. **Download and expand this repository.** Double-click
-   **Install G2 Bridge.command** and follow its checks. It builds the app locally
+   **Install Even Terminal for Codex Mac App.command** and follow its checks. It builds the app locally
    and installs it in Applications; it obtains the reviewed Node runtime if needed.
-4. **Open G2 Bridge → Connect.** Show the pairing QR code and scan it in the
+4. **Open Even Terminal for Codex Mac App → Connect.** Show the pairing QR code and scan it in the
    Even Realities app's Terminal Mode. Choose a conversation you recognize.
 
 The [step-by-step tutorial](docs/getting-started.md) explains the one-time Apple
@@ -83,7 +83,7 @@ Read the [network comparison](docs/network-options.md).
 ## How it works, simply
 
 ```text
-Even G2 ↔ Even Realities phone app ↔ configured network ↔ G2 Bridge ↔ Codex Mac app
+Even G2 ↔ Even Realities phone app ↔ configured network ↔ Even Terminal for Codex Mac App ↔ Codex Mac app
 ```
 
 The phone sends authenticated messages to the bridge on your Mac. The bridge
@@ -93,7 +93,7 @@ for running the task. Saved delivery records help reconcile interrupted
 connections without blindly sending the same instruction twice.
 
 Keep your Mac logged in and awake, with Codex and the configured network available.
-Automatic startup begins at login, not before it, and G2 Bridge does not change
+Automatic startup begins at login, not before it, and Even Terminal for Codex Mac App does not change
 sleep settings. “Ready” confirms local checks; seeing your conversation on the
 glasses is the separate end-to-end check.
 
@@ -114,7 +114,7 @@ bash scripts/build-app.sh
 ```
 
 These commands restore locked dependencies, build `.build/runtime`, run the
-offline tests, and build `.build/G2 Bridge.app`. They do not install, restart, or
+offline tests, and build `.build/Even Terminal for Codex Mac App.app`. They do not install, restart, or
 send a prompt through the live service. Use the reviewed Node version.
 
 | Area | Guide |

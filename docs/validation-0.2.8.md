@@ -1,5 +1,9 @@
 # Validation: bridge 0.2.8 / control app 1.1.0
 
+Historical record: this release used the name **G2 Bridge**. The current product
+name is **Even Terminal for Codex Mac App**; former names and installation paths below
+are preserved as evidence of that release.
+
 Recorded on 21 September 2026. This distinguishes source checks from installation
 and physical-device validation.
 

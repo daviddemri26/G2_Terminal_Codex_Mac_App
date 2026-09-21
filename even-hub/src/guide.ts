@@ -24,7 +24,7 @@ export function rootPage() {
   return {
     containerTotalNum: 3,
     textObject: [
-      text(1, 'title', 6, 38, 'G2 Bridge Guide'),
+      text(1, 'title', 6, 38, 'Codex Mac App Guide'),
       text(3, 'hint', 250, 32, 'Tap to open · Double-tap to exit'),
     ],
     listObject: [new ListContainerProperty({

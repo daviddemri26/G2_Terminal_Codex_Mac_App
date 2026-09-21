@@ -1,6 +1,6 @@
 # Application icon
 
-`app-icon.png` is the 1024 × 1024 source artwork for G2 Bridge. It has an alpha
+`app-icon.png` is the 1024 × 1024 source artwork for Even Terminal for Codex Mac App. It has an alpha
 channel and a dark macOS tile with a compact emerald glasses/bridge mark.
 The application consumes `../macos/Resources/AppIcon.icns`.
 
@@ -31,6 +31,8 @@ local conversion with normal macOS filesystem permissions resolves that case.
 
 > Use case: logo-brand
 >
+The original generation prompt below records the former name.
+
 > Asset type: production macOS application Dock icon for G2 Bridge, square 1024 by 1024 PNG with genuine transparency outside the rounded-square tile.
 >
 > Primary request: Create a beautiful minimal Mac app icon for a local bridge connecting smart glasses to a computer. This is the icon artwork itself, not a photograph or screen mockup.

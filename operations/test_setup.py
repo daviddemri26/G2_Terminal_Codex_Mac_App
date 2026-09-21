@@ -140,7 +140,7 @@ class SetupTests(unittest.TestCase):
             result = setup.pair(self.support, reveal=True)
         parsed = urlsplit(result['url'])
         self.assertEqual(parsed.netloc, '192.168.4.2:3456')
-        self.assertEqual(parse_qs(parsed.query), {'token': [config['token']], 'defaultProvider': ['codex'], 'name': ['G2 Bridge']})
+        self.assertEqual(parse_qs(parsed.query), {'token': [config['token']], 'defaultProvider': ['codex'], 'name': ['Even Terminal for Codex Mac App']})
         self.assertEqual(result['network'], 'lan')
         self.assertEqual(self.config.read_bytes(), before)
         api.assert_called_once_with(config, '/api/info?provider=codex', timeout=3)

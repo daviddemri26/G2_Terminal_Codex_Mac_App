@@ -3,18 +3,18 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key><string>en</string>
-    <key>CFBundleDisplayName</key><string>G2 Bridge</string>
+    <key>CFBundleDisplayName</key><string>Even Terminal for Codex Mac App</string>
     <key>CFBundleExecutable</key><string>G2Bridge</string>
     <key>CFBundleIdentifier</key><string>com.daviddemri.g2bridge</string>
     <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-    <key>CFBundleName</key><string>G2 Bridge</string>
+    <key>CFBundleName</key><string>Even Terminal for Codex Mac App</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleShortVersionString</key><string>1.1.0</string>
-    <key>CFBundleVersion</key><string>2</string>
+    <key>CFBundleShortVersionString</key><string>1.1.1</string>
+    <key>CFBundleVersion</key><string>3</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
-    <key>NSHumanReadableCopyright</key><string>G2 Bridge · David Demri</string>
+    <key>NSHumanReadableCopyright</key><string>Even Terminal for Codex Mac App · David Demri</string>
 </dict>
 </plist>

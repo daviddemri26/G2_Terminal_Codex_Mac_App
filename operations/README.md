@@ -1,6 +1,6 @@
 # Managed bridge operations
 
-These standard-library Python helpers manage the existing per-user G2 bridge.
+These standard-library Python helpers manage the per-user background service for Even Terminal for Codex Mac App.
 Run commands from the repository root. The native app bundles the same helpers;
 the installed LaunchAgent loads its independent copy under Application Support.
 

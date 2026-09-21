@@ -1,6 +1,6 @@
-# G2 Bridge for macOS
+# Even Terminal for Codex Mac App — native application
 
-A small native SwiftUI window for the independently managed desktop bridge. It is a normal Dock application, runs on macOS 14 or newer, and uses no third-party UI framework. Closing the window or quitting the app does not stop the bridge. Click the Dock icon to reopen its existing window.
+The native Mac application connects your Codex Mac app conversations to Even Terminal on G2 glasses. Its small SwiftUI window controls the independently managed background service. It is a normal Dock application, runs on macOS 14 or newer, and uses no third-party UI framework. Closing the window or quitting the app does not stop the bridge. Click the Dock icon to reopen its existing window.
 
 ## Build
 
@@ -8,7 +8,7 @@ From the repository root, with Xcode Command Line Tools installed:
 
 ```sh
 bash scripts/build-app.sh
-open ".build/G2 Bridge.app"
+open ".build/Even Terminal for Codex Mac App.app"
 ```
 
 The build targets the Mac's current architecture and embeds the standard-library-only Python operations files and app icon. The app is signed ad hoc for local use; it is not notarized or prepared for public distribution. Its runtime requires `/usr/bin/python3`, supplied by the development tools on this Mac. Build the app again after changing `operations/` so its bundled controller matches the source.
@@ -16,7 +16,7 @@ The build targets the Mac's current architecture and embeds the standard-library
 For visual review without reading or changing the installed service:
 
 ```sh
-open -n ".build/G2 Bridge.app" --args --preview
+open -n ".build/Even Terminal for Codex Mac App.app" --args --preview
 ```
 
 Preview mode displays a labeled fixture and disables controller requests. Buttons that open other applications remain normal navigation actions. Never use a preview screenshot as evidence of a live service or glasses connection.

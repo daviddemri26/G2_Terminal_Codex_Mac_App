@@ -32,10 +32,10 @@ jobs:
       - name: Create a local candidate package
         run: |
           mkdir -p .build
-          npm exec -- evenhub pack app.json dist -o .build/g2-bridge-guide-0.1.0.ehpk --sdk-ver 0.0.14
+          npm exec -- evenhub pack app.json dist -o .build/even-terminal-for-codex-mac-app-guide-0.1.1.ehpk --sdk-ver 0.0.14
       - uses: actions/upload-artifact@v4
         with:
-          name: g2-bridge-guide-candidate
-          path: even-hub/.build/g2-bridge-guide-0.1.0.ehpk
+          name: even-terminal-for-codex-mac-app-guide-candidate
+          path: even-hub/.build/even-terminal-for-codex-mac-app-guide-0.1.1.ehpk
           retention-days: 7
           if-no-files-found: error

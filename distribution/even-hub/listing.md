@@ -11,8 +11,9 @@ and device validation must match the final description and screenshots.
 
 | Field | Suggested value |
 | --- | --- |
-| Name | G2 Bridge Guide |
-| Subtitle | Set up your Mac conversations on Even G2 |
+| Full product title | Even Terminal for Codex Mac App Guide |
+| Even Hub name (19 characters) | Codex Mac App Guide |
+| Subtitle | Setup guide for the Codex Mac app and Even Terminal |
 | Short description | A setup guide for using Even Terminal with the Codex Mac app, without a separate Codex CLI workflow. |
 | Category, if available | Utilities or Reference; select the closest category offered by the portal |
 | Website | https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/ |
@@ -21,26 +22,26 @@ and device validation must match the final description and screenshots.
 
 ## Full description
 
-### Your Mac conversations, within reach
+### Use Even Terminal with the Codex Mac app
 
-Already use Even G2, Even Terminal, and the Codex Mac app? G2 Bridge helps you
+Already use Even G2, Even Terminal, and the Codex Mac app? Even Terminal for Codex Mac App helps you
 find and continue supported Mac conversations from your glasses. Your work stays
 in the same Mac conversation, so you can pick it up again when you return to
 your desk. You do not need to start a separate Codex CLI session.
 
-**G2 Bridge Guide is the small setup and reference companion.** It explains what
+**Even Terminal for Codex Mac App Guide is the small setup and reference companion.** It explains what
 you need, how to install the Mac bridge, how to pair your phone, and where to find
 help. Its glasses menu contains **Set up**, **Daily use**, **Troubleshoot**, and
 **About**. The phone view provides explanations and documentation references;
 copy a link into your browser when needed. Actual conversations and replies use
 **Even Terminal**.
 
-Installing this guide from Even Hub does not install G2 Bridge on your Mac. The
+Installing this guide from Even Hub does not install Even Terminal for Codex Mac App on your Mac. The
 Mac software is a separate download with its own compatibility checks.
 
 ### Why the Mac bridge exists
 
-G2 Bridge connects Even Terminal to the task engine already used by the Codex
+Even Terminal for Codex Mac App connects Even Terminal to the task engine already used by the Codex
 Mac app. It can reopen supported local conversations and their history, show
 public progress and final answers, send follow-ups, and handle supported
 questions and approval choices. Some controls still need the Mac app.
@@ -61,11 +62,11 @@ Even Terminal.
 2. [Connect the Mac and phone](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#network).
    Tailscale is the guided first-setup option. An existing valid Even Terminal
    Codex LAN or named-interface profile can be preserved.
-3. [Install G2 Bridge on your Mac](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#install).
-   Download the source ZIP, expand it, and open **Install G2 Bridge.command**.
+3. [Install Even Terminal for Codex Mac App on your Mac](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#install).
+   Download the source ZIP, expand it, and open **Install Even Terminal for Codex Mac App.command**.
    The current public alpha builds locally using Apple's developer tools.
 4. [Pair your phone](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#pair).
-   Open **G2 Bridge → Connect** on the Mac and scan its private QR code in the
+   Open **Even Terminal for Codex Mac App → Connect** on the Mac and scan its private QR code in the
    Even Realities app's **Terminal Mode**. Keep that QR code private.
 5. [Open a familiar conversation](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/#first-use)
    in Even Terminal. Keep your Mac logged in and awake, with Codex and your
@@ -82,7 +83,7 @@ The Mac bridge is a **public alpha**. The reviewed combination is:
 - **macOS 14 or later**, with Apple Silicon as the reviewed setup.
 - **Codex Mac app 26.915.31945, build 9922**. The supported application identity
   may be installed as `Codex.app` or `ChatGPT.app`.
-- **G2 Bridge 0.2.8**, Mac control app **1.1.0**, pinned Even Terminal **0.10.4**,
+- **Even Terminal for Codex Mac App** bridge **0.2.8**, Mac control app **1.1.1**, pinned Even Terminal **0.10.4**,
   and Node **26.9.0**.
 - Apple's Command Line Tools with **Swift 6 or later and Python 3** for the
   current source installation. There is no Apple-notarized ready-made download.
@@ -130,14 +131,15 @@ Realities product.
 Use real captures of the finished companion. Do not show the Mac bridge UI as
 though it were part of the Hub app, and never capture a real pairing QR.
 
-1. **Know if G2 Bridge is for you** — A short explanation for Codex Mac app users.
+1. **Know if Even Terminal for Codex Mac App is for you** — A short explanation for Codex Mac app users.
 2. **Follow the setup checklist** — Requirements, Mac installation, and pairing.
 3. **Keep a quick reference in sight** — Short instructions on the glasses;
    detailed guides available on the phone.
 
 ## Submission review notes
 
-- Keep **Guide** in the name and the separate-Mac-installation explanation near
+- Use **Codex Mac App Guide** in the 20-character portal name field and the full
+  **Even Terminal for Codex Mac App Guide** title in the description. Keep **Guide** in the name and the separate-Mac-installation explanation near
   the beginning. Do not present this as a Terminal replacement or a standalone
   Codex client.
 - Verify all companion claims above against the packaged app and physical

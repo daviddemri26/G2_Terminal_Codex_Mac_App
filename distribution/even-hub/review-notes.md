@@ -1,4 +1,4 @@
-# Review notes — G2 Bridge Guide 0.1.0
+# Review notes — Even Terminal for Codex Mac App Guide 0.1.1
 
 ## What to review
 
@@ -32,7 +32,7 @@ continue to work when the separate Mac bridge is unavailable.
 
 ## Release notes for the first candidate
 
-Initial English setup and reference guide for G2 Bridge. Includes setup steps,
+Initial English setup and reference guide for Even Terminal for Codex Mac App. Includes setup steps,
 daily-use reminders, troubleshooting, compatibility guidance, and links to the
 Mac installation tutorial and project support.
 

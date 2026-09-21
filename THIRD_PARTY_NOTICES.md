@@ -1,6 +1,6 @@
 # Third-party notices
 
-G2 Bridge is an independent integration. It is not an official OpenAI, Codex,
+Even Terminal for Codex Mac App is an independent integration. It is not an official OpenAI, Codex,
 Even Realities, Even Terminal, or Tailscale product. Product names identify the
 systems with which this project interoperates.
 
@@ -23,7 +23,7 @@ installed dependency tree. Node.js, Python, Apple frameworks/developer tools, th
 Codex Mac app, and Tailscale are separate dependencies subject to their respective
 terms. The project does not redistribute extracted Codex Mac application source.
 
-The original G2 Bridge icon was generated with ImageGen. Its prompt and conversion
+The original Even Terminal for Codex Mac App icon was generated with ImageGen. Its prompt and conversion
 steps are recorded in [assets/README.md](assets/README.md); it contains no official
 Even or OpenAI logo.
 

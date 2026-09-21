@@ -22,12 +22,12 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let appItem = NSMenuItem()
         menu.addItem(appItem)
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "About G2 Bridge", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
+        appMenu.addItem(withTitle: "About Even Terminal for Codex Mac App", action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Show G2 Bridge", action: #selector(showWindow), keyEquivalent: "0").target = self
+        appMenu.addItem(withTitle: "Show Even Terminal for Codex Mac App", action: #selector(showWindow), keyEquivalent: "0").target = self
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "Hide G2 Bridge", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
-        appMenu.addItem(withTitle: "Quit G2 Bridge", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Hide Even Terminal for Codex Mac App", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        appMenu.addItem(withTitle: "Quit Even Terminal for Codex Mac App", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         let editItem = NSMenuItem()
         let editMenu = NSMenu(title: "Edit")
@@ -40,7 +40,7 @@ final class ApplicationDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 880, height: 625),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
-        window.title = "G2 Bridge"
+        window.title = "Even Terminal for Codex Mac App"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.backgroundColor = NSColor(red: 0.059, green: 0.078, blue: 0.106, alpha: 1)

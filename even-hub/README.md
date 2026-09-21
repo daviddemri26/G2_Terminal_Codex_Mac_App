@@ -1,4 +1,4 @@
-# G2 Bridge Guide — Even Hub companion
+# Even Terminal for Codex Mac App Guide — Even Hub companion
 
 A small, offline guide for people using **Even G2 + Even Terminal + the Codex Mac
 app**. The glasses show four native topics: Set up, Daily use, Troubleshoot, and
@@ -40,7 +40,7 @@ To prepare a local candidate package after a successful build:
 
 ```sh
 mkdir -p .build
-./node_modules/.bin/evenhub pack app.json dist --sdk-ver 0.0.14 -o .build/g2-bridge-guide-0.1.0.ehpk
+./node_modules/.bin/evenhub pack app.json dist --sdk-ver 0.0.14 -o .build/even-terminal-for-codex-mac-app-guide-0.1.1.ehpk
 ```
 
 The pack command looks up the SDK's minimum host-app version in npm. It does not

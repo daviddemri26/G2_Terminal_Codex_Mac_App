@@ -1,7 +1,7 @@
-# G2 Bridge Guide — Even Hub preparation
+# Even Terminal for Codex Mac App Guide — Even Hub preparation
 
 **Draft candidate, not submitted or listed.** This folder prepares a small,
-useful companion for discovering and setting up G2 Bridge. It does not install
+useful companion for discovering and setting up Even Terminal for Codex Mac App. It does not install
 the Mac application or replace Even Terminal.
 
 The official publishing flow requires an application package. No listing-only
@@ -21,9 +21,15 @@ still Even Realities' decision.
 | `create-assets.py` | Generates an original icon and proposed background under `.build/even-hub-assets/` |
 | [Companion source](../../even-hub/) | Separate npm project; no changes to the installed Mac service |
 
-The name **G2 Bridge Guide** is deliberately explicit about its purpose. A user
+The Mac product is **Even Terminal for Codex Mac App**. The Hub title is
+**Codex Mac App Guide** (19 characters), within the documented 20-character limit.
+The [Even Hub submission rules](https://hub.evenrealities.com/docs/ship/app-submission)
+also prohibit “Even” in the manifest app name. That short name is therefore used
+consistently in the manifest, phone masthead, and native menu.
+The full guide title is **Even Terminal for Codex Mac App Guide**.
+Its subtitle is **Setup guide for the Codex Mac app and Even Terminal**. A user
 installing it should expect a reference guide. Conversation discovery and
-interaction belong to Even Terminal connected to the separate G2 Bridge Mac app.
+interaction belong to Even Terminal connected to the separate Even Terminal for Codex Mac App application.
 
 ## Publication checks still needed
 

@@ -1,4 +1,4 @@
-# Working on G2 Bridge
+# Working on Even Terminal for Codex Mac App
 
 ## Scope and source of truth
 
