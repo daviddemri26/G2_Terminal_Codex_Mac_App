@@ -1,6 +1,6 @@
 {
-  "bridgeVersion": "0.2.8",
-  "appVersion": "1.1.1",
+  "bridgeVersion": "0.2.9",
+  "appVersion": "1.1.2",
   "evenTerminalVersion": "0.10.4",
   "nodeVersion": "v26.9.0",
   "desktop": {

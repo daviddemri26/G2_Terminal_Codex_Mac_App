@@ -208,7 +208,7 @@ test('public commentary remains readable in history while final result excludes 
     assert.equal(events.find(e => e.type === 'result').text, 'Final answer.');
     assert.ok(events.some(e => e.type === 'task_progress' && e.current === '' && e.completed === 1));
     assert.equal(JSON.stringify(events).includes('PRIVATE_REASONING_NOT_FOR_UI'), false);
-    assert.ok((await provider.getHistory(id, 20)).some(m => /^\[0m00\] Checking the source\.$/.test(m.text)));
+    assert.ok((await provider.getHistory(id, 20)).some(m => /^\[0s\] Checking the source\.$/.test(m.text)));
   } finally { await provider.close(); }
 });
 
@@ -538,10 +538,10 @@ test('commentary is one complete native activity row across patches, separate fr
     const start = events.find(e => e.type === 'tool_start');
     const end = events.find(e => e.type === 'tool_end');
     assert.equal(start.toolId, end.toolId);
-    assert.equal(end.name, '[0m00]');
+    assert.equal(end.name, '[0s]');
     assert.equal(end.summary, 'Checking files.');
     assert.deepEqual(end.detail, { output: 'Checking files.' });
-    assert.equal(events.filter(e => e.type === 'text_delta').map(e => e.text).join(''), '[0m00]\n\nFinished.');
+    assert.equal(events.filter(e => e.type === 'text_delta').map(e => e.text).join(''), '[0s]\n\nFinished.');
     client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
     client.emit('state', id, client.current); await provider.watch(id);
     assert.equal(events.filter(e => e.type === 'tool_end').length, 1);
@@ -585,7 +585,8 @@ test('public activity remains available while generic tool rows and private payl
       { id: 'read', type: 'commandExecution', status: 'inProgress', command: 'HIDDEN_COMMAND', commandActions: [{ type: 'read', path: '/private/place/provider.mjs' }], output: 'HIDDEN_TOOL_OUTPUT' },
       { id: 'patch', type: 'fileChange', status: 'inProgress', changes: [{ path: '/private/place/interface.ts', kind: { type: 'update' }, diff: 'HIDDEN_DIFF' }] });
     await provider.watch(id);
-    assert.equal(events.some(e => e.type === 'tool_start' || e.type === 'tool_end'), false);
+    assert.deepEqual(events.filter(e => e.type === 'tool_end').map(e => e.summary), ['Checking reply handling']);
+    assert.ok(events.filter(e => e.type === 'tool_end').every(e => e.bridgePublicUpdate));
     assert.ok(events.some(e => e.type === 'task_progress' && e.current.includes('Checking reply handling')));
     assert.doesNotMatch(JSON.stringify(events), /HIDDEN_|\/private\/place/);
     client.current.turns[0].items.at(-2).status = 'completed'; client.emit('state', id, client.current);
@@ -666,15 +667,15 @@ test('elapsed labels stay inline for updates and precede the final with extra sp
     client.emit('state', id, client.current);
     time = 135000; client.current.turns[0].items[0].text = 'Final reply.'; client.emit('state', id, client.current);
     const text = events.filter(e => e.type === 'text_delta').map(e => e.text).join('');
-    assert.equal(text, '[2m05]\n\nFinal reply.');
-    assert.deepEqual(events.filter(e => e.type === 'tool_end').map(e => [e.name, e.summary]), [['[1m30]', 'First update. Extra detail.'], ['[1m50]', 'Second update.']]);
+    assert.equal(text, '[2:05]\n\nFinal reply.');
+    assert.deepEqual(events.filter(e => e.type === 'tool_end').map(e => [e.name, e.summary]), [['[1:30]', 'First update. Extra detail.'], ['[1:50]', 'Second update.']]);
     assert.doesNotMatch(text, /\bUpdate\b|\bAnswer\b/);
     time = 155000; client.current.turns[0].status = 'completed'; client.current.turns[0].durationMs = 145000; client.current.threadRuntimeStatus = { type: 'idle' };
     client.emit('state', id, client.current);
     const history = await provider.getHistory(id, 10);
-    assert.ok(history.some(m => m.text === '[1m30] First update. Extra detail.'));
-    assert.ok(history.some(m => m.text === '[1m50] Second update.'));
-    assert.ok(history.some(m => m.text === '[2m05]\n\nFinal reply.'));
+    assert.ok(history.some(m => m.text === '[1:30] First update. Extra detail.'));
+    assert.ok(history.some(m => m.text === '[1:50] Second update.'));
+    assert.ok(history.some(m => m.text === '[2:05]\n\nFinal reply.'));
     assert.equal(events.filter(e => e.bridgeFinalHeader).length, 1);
   } finally { await provider.close(); }
 });
@@ -686,7 +687,7 @@ test('old history uses known final duration and never invents elapsed timestamps
     client.current.turns[0].items.unshift({ id: 'old-update', type: 'agentMessage', phase: 'commentary', text: 'Historical update.' });
     const history = await provider.getHistory(id, 10);
     assert.ok(history.some(m => m.text === 'Historical update.'));
-    assert.ok(history.some(m => m.text === '[1m25]\n\nPrevious answer'));
+    assert.ok(history.some(m => m.text === '[1:25]\n\nPrevious answer'));
   } finally { await provider.close(); }
 });
 
@@ -697,9 +698,9 @@ test('native per-message timestamps recover exact elapsed labels when joining ex
     Object.assign(client.current.turns[0], { turnStartedAtMs: 100000, aeonAssistantMessageStartedAtMsById: { update: 781000 } });
     client.current.turns[0].items.push({ id: 'update', type: 'agentMessage', phase: 'commentary', text: 'Existing update.' }, { id: 'after', type: 'reasoning', summary: [] });
     await provider.watch(id);
-    assert.ok(events.some(e => e.type === 'tool_end' && e.name === '[11m21]' && e.summary === 'Existing update.'));
+    assert.ok(events.some(e => e.type === 'tool_end' && e.name === '[11:21]' && e.summary === 'Existing update.'));
     const history = await provider.getHistory(id, 10);
-    assert.ok(history.some(m => m.text === '[11m21] Existing update.'));
+    assert.ok(history.some(m => m.text === '[11:21] Existing update.'));
   } finally { await provider.close(); }
 });
 
@@ -710,7 +711,7 @@ test('final time label prefers its own native message timestamp over the turn-wi
     Object.assign(client.current.turns[0], { turnStartedAtMs: 100000, finalAssistantStartedAtMs: 180000,
       aeonAssistantMessageStartedAtMsById: { 'answer-final-item-time': 140000 } });
     await provider.watch(id);
-    assert.equal(events.find(e => e.bridgeFinalHeader).text, '[0m40]\n\n');
+    assert.equal(events.find(e => e.bridgeFinalHeader).text, '[40s]\n\n');
   } finally { await provider.close(); }
 });
 
@@ -758,7 +759,7 @@ test('joining active work does not assign current time to older skipped commenta
     await provider.watch(id);
     const history = await provider.getHistory(id, 10);
     assert.ok(history.some(e => e.text === 'An older update.'));
-    assert.ok(history.some(e => e.text === '[6m40] The current update.'));
+    assert.ok(history.some(e => e.text === '[6:40] The current update.'));
   } finally { await provider.close(); }
 });
 
@@ -796,7 +797,7 @@ test('formatting changes apply at turn boundaries without replaying a current re
     client.current.turns[0].items[0].text += 'Second.';
     client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
     client.emit('state', id, client.current);
-    assert.equal(events.filter(event => event.type === 'text_delta').map(event => event.text).join(''), '[0m00]\n\nFirst.\n\nSecond.');
+    assert.equal(events.filter(event => event.type === 'text_delta').map(event => event.text).join(''), '[0s]\n\nFirst.\n\nSecond.');
     const history = await provider.getHistory(id, 20);
     assert.ok(history.some(message => message.text === 'First.\nSecond.'));
     assert.equal(events.filter(event => event.type === 'result').length, 1);
@@ -860,5 +861,206 @@ test('a late commentary suffix after a flushed paragraph gap keeps every word on
     assert.equal(shown, 'First.\n\nSecond. Third.');
     assert.equal(client.starts.length, 0);
     assert.equal(client.replies.length, 0);
+  } finally { await provider.close(); }
+});
+
+const publicRows = events => events.filter(event => event.type === 'tool_end' && event.bridgePublicUpdate);
+
+test('extra public activity follows native order once and stays separate from the final answer', async () => {
+  const { provider, client, events } = setup({ now: () => 255000 });
+  try {
+    await provider.watch(id);
+    client.current = state('inProgress', '', 'activity');
+    const turn = client.current.turns[0];
+    turn.turnStartedAtMs = 100000;
+    turn.items = [
+      { id: 'intro', type: 'agentMessage', phase: 'commentary', text: 'I will check the files.' },
+      { id: 'started', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'started' },
+      { id: 'read', type: 'commandExecution', status: 'completed', commandActions: [{ type: 'read' }], output: 'PRIVATE_OUTPUT' },
+      { id: 'exec', type: 'commandExecution', status: 'completed', commandActions: [{ type: 'unknown' }], command: 'PRIVATE_COMMAND' },
+      { id: 'finished', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'completed' },
+      { id: 'step', type: 'reasoning', summary: ['**Implementing root build script**'], content: ['PRIVATE_REASONING'] },
+      { id: 'final', type: 'agentMessage', phase: 'final_answer', text: 'Done.' },
+    ];
+    client.emit('state', id, client.current);
+    turn.status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current); await provider.watch(id);
+    assert.deepEqual(publicRows(events).map(event => event.summary), [
+      'I will check the files.', 'App icon started working', 'Read files, ran commands',
+      'App icon finished', 'Implementing root build script',
+    ]);
+    assert.ok(publicRows(events).every(event => event.name === '[2:35]'));
+    assert.ok(events.findIndex(event => event.type === 'text_delta' && event.text === 'Done.')
+      > events.findLastIndex(event => event.type === 'tool_end'));
+    assert.equal(events.filter(event => event.type === 'result').length, 1);
+    assert.equal(events.find(event => event.type === 'result').text, 'Done.');
+    assert.doesNotMatch(JSON.stringify(events), /PRIVATE_/);
+  } finally { await provider.close(); }
+});
+
+test('completed history includes extra activity without starting live rows or inventing old timestamps', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current.turns[0].items.unshift(
+      { id: 'started', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'started' },
+      { id: 'step', type: 'reasoning', summary: ['Checking output'], content: ['PRIVATE_REASONING'] });
+    const history = await provider.getHistory(id, 20);
+    await provider.watch(id);
+    assert.deepEqual(history.filter(message => message.role === 'assistant').map(message => message.text),
+      ['App icon started working', 'Checking output', 'Previous answer']);
+    assert.equal(publicRows(events).length, 0);
+    assert.equal(events.some(event => event.type === 'result'), false);
+  } finally { await provider.close(); }
+});
+
+test('reconnect retains activity identity and adds only unseen child lifecycle events', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'reconnect-activity');
+    client.current.turns[0].items.push({ id: 'started', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'started' });
+    await provider.watch(id);
+    client.emit('disconnected');
+    client.current.turns[0].items.push({ id: 'finished', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'completed' });
+    await provider.watch(id); await provider.watch(id);
+    assert.deepEqual(publicRows(events).map(event => event.summary), ['App icon started working', 'App icon finished']);
+    assert.equal(new Set(publicRows(events).map(event => event.toolId)).size, 2);
+  } finally { await provider.close(); }
+});
+
+test('heading updates settle into complete text before a dim row is sent', async () => {
+  const { provider, client, events } = setup({ commentarySettleMs: 15 });
+  try {
+    client.current = state('inProgress', '', 'settle-heading');
+    const heading = { id: 'heading', type: 'reasoning', summary: ['Checking'] };
+    client.current.turns[0].items.push(heading);
+    await provider.watch(id);
+    heading.summary = ['Checking the source files']; client.emit('state', id, client.current);
+    assert.equal(publicRows(events).length, 0);
+    await new Promise(resolve => setTimeout(resolve, 60));
+    await provider.watch(id);
+    assert.deepEqual(publicRows(events).map(event => event.summary), ['Checking the source files']);
+  } finally { await provider.close(); }
+});
+
+test('disabled progress hides extra activities but retains questions and the final answer', async () => {
+  const { provider, client, events } = setup({ readTextFormatting: () => ({ ...DEFAULT_TEXT_FORMATTING, showProgressUpdates: false }) });
+  try {
+    client.current = state('inProgress', '', 'hidden-activity');
+    client.current.requests = [questionRequest()];
+    client.current.turns[0].items.push({ id: 'step', type: 'reasoning', summary: ['Checking the source files'] },
+      { id: 'started', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'started' });
+    await provider.watch(id);
+    assert.ok(events.some(event => event.type === 'user_question'));
+    client.current.requests = [];
+    client.current.turns[0].items.push({ id: 'final', type: 'agentMessage', phase: 'final_answer', text: 'Done.' });
+    client.current.turns[0].status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current);
+    assert.equal(publicRows(events).length, 0);
+    assert.ok(events.some(event => event.type === 'result' && event.text.includes('Done.')));
+    const history = await provider.getHistory(id, 20);
+    assert.equal(history.some(message => message.phase === 'commentary'), false);
+    assert.equal(client.interrupts, 0); assert.equal(client.starts.length, 0);
+  } finally { await provider.close(); }
+});
+
+test('withdrawn pending activity is not emitted by a later settle timer', async () => {
+  const { provider, client, events } = setup({ commentarySettleMs: 15 });
+  try {
+    client.current = state('inProgress', '', 'withdrawn-heading');
+    const turn = client.current.turns[0];
+    const heading = { id: 'heading', type: 'reasoning', summary: ['Obsolete heading'] };
+    turn.items.push(heading);
+    await provider.watch(id);
+    heading.summary = [];
+    client.emit('state', id, client.current);
+    await new Promise(resolve => setTimeout(resolve, 60));
+    assert.equal(publicRows(events).length, 0);
+    heading.summary = ['Current heading']; client.emit('state', id, client.current);
+    await new Promise(resolve => setTimeout(resolve, 60));
+    assert.deepEqual(publicRows(events).map(event => event.summary), ['Current heading']);
+  } finally { await provider.close(); }
+});
+
+
+test('joining active work never assigns the current duration to an old extra event', async () => {
+  const { provider, client, events } = setup({ now: () => 700000 });
+  try {
+    client.current = state('inProgress', '', 'old-activity');
+    client.current.turns[0].turnStartedAtMs = 100000;
+    client.current.turns[0].items.push({ id: 'finished', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'completed' });
+    await provider.watch(id);
+    assert.equal(publicRows(events)[0].summary, 'App icon finished');
+    assert.equal(publicRows(events)[0].name, '');
+  } finally { await provider.close(); }
+});
+
+test('reconnecting during final streaming never appends newly discovered activity after the answer', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', 'Partial final answer', 'final-stream');
+    await provider.watch(id);
+    assert.ok(events.some(event => event.type === 'text_delta'));
+    client.emit('disconnected');
+    client.current.turns[0].items.push({ id: 'finished', type: 'subAgentActivity', agentThreadId: 'child-task', agentPath: '/root/app_icon', kind: 'completed' });
+    await provider.watch(id);
+    assert.equal(publicRows(events).length, 0);
+    client.current.turns[0].items[0].text += ' continued.';
+    client.emit('state', id, client.current);
+    assert.ok(events.some(event => event.type === 'text_delta' && event.text === ' continued.'));
+  } finally { await provider.close(); }
+});
+
+
+test('diff summary is deduplicated across snapshots and emitted before the final response', async () => {
+  const { provider, client, events } = setup();
+  try {
+    await provider.watch(id);
+    client.current = state('inProgress', '', 'diff-activity');
+    const turn = client.current.turns[0];
+    turn.diff = 'diff --git a/example.txt b/example.txt\n--- a/example.txt\n+++ b/example.txt\n@@ -1 +1 @@\n-before\n+after\n';
+    client.emit('state', id, client.current); client.emit('state', id, client.current);
+    turn.items.push({ id: 'final', type: 'agentMessage', phase: 'final_answer', text: 'Updated.' });
+    turn.status = 'completed'; client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current); await provider.watch(id);
+    assert.equal(publicRows(events).length, 1);
+    assert.match(publicRows(events)[0].summary, /1 file changed.*\+1.*[−-]1/);
+    assert.ok(events.findIndex(event => event.type === 'tool_end') < events.findIndex(event => event.type === 'text_delta'));
+    const history = await provider.getHistory(id, 20);
+    assert.ok(history.findIndex(message => /1 file changed/.test(message.text)) < history.findIndex(message => /Updated/.test(message.text)));
+    assert.doesNotMatch(JSON.stringify(events), /example.txt|before|after/);
+  } finally { await provider.close(); }
+});
+
+test('file statistics use a fresh timestamp only when the visible summary changes', async () => {
+  let time = 120000;
+  const { provider, client, events } = setup({ now: () => time, commentarySettleMs: 15 });
+  try {
+    await provider.watch(id);
+    client.current = state('inProgress', '', 'diff-clock');
+    const turn = client.current.turns[0]; turn.turnStartedAtMs = 100000;
+    turn.diff = 'diff --git a/example.txt b/example.txt\n--- a/example.txt\n+++ b/example.txt\n@@ -1 +1 @@\n-before\n+after\n';
+    client.emit('state', id, client.current); time += 100; await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(publicRows(events)[0].name, '[20s]');
+    time = 155000;
+    turn.diff = turn.diff.replace('@@ -1 +1 @@', '@@ -1 +1,2 @@').replace('+after', '+after\n+another');
+    client.emit('state', id, client.current); time += 100; await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(publicRows(events).at(-1).name, '[55s]');
+    assert.match(publicRows(events).at(-1).summary, /\+2/);
+    const count = publicRows(events).length;
+    turn.diff = turn.diff.replace('another', 'different'); client.emit('state', id, client.current);
+    time += 100; await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(publicRows(events).length, count);
+  } finally { await provider.close(); }
+});
+
+test('withdrawn file statistics never appear after the settle interval', async () => {
+  const { provider, client, events } = setup({ commentarySettleMs: 15 });
+  try {
+    client.current = state('inProgress', '', 'withdrawn-diff');
+    const turn = client.current.turns[0];
+    turn.diff = 'diff --git a/example.txt b/example.txt\n--- a/example.txt\n+++ b/example.txt\n@@ -1 +1 @@\n-before\n+after\n';
+    await provider.watch(id); turn.diff = null; client.emit('state', id, client.current);
+    await new Promise(resolve => setTimeout(resolve, 60));
+    assert.equal(publicRows(events).length, 0);
   } finally { await provider.close(); }
 });

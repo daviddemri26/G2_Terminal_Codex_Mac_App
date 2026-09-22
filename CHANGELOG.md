@@ -1,5 +1,24 @@
 # Change log
 
+## Control app 1.1.2 / bridge 0.2.9 — 2026-09-21
+
+- Compact elapsed timestamps: `[2s]` below a minute, then `[1:04]`, including
+  public activity, final answers, and reopened history.
+
+- Show additional public activity in the dim native rows: brief activity headings,
+  explicit subagent lifecycle updates, and grouped file-reading, search, and
+  command activity when the desktop provides the required metadata.
+- Add compact file-change summaries, with line totals only when the available
+  diff supports reliable counting; otherwise show the file count alone.
+- Keep activity rows out of the final answer, suppress repeated observations,
+  and apply the existing **Live progress updates** preference to the added rows.
+- Keep Text settings available for both 0.2.9 and the previous 0.2.8 runtime.
+  The control app includes the updated version gates.
+
+Offline and installed-service checks passed. Physical-device validation of the
+additional rows remains pending. See the [0.2.9 validation record](docs/validation-0.2.9.md)
+for the separate results.
+
 ## Control app 1.1.1 / Even Hub guide 0.1.1 — 2026-09-21
 
 - Rename the Mac application and source installer to **Even Terminal for Codex Mac App**.

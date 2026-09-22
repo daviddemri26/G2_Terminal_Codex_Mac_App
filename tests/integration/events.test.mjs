@@ -59,26 +59,65 @@ test('elapsed-time heartbeats retain only the latest value and disappear after c
 test('replay retains frozen update timestamps and one final time label before the complete answer', () => {
   const id = 'visible-timestamp-replay';
   pushMessage(id, { type: 'user_prompt', text: 'Work' });
-  pushMessage(id, { type: 'text_delta', text: '[0m12] Working.\n\n', bridgePublicUpdate: true });
-  pushMessage(id, { type: 'text_delta', text: '[1m04]\n\n', bridgeFinalHeader: true });
+  pushMessage(id, { type: 'text_delta', text: '[12s] Working.\n\n', bridgePublicUpdate: true });
+  pushMessage(id, { type: 'text_delta', text: '[1:04]\n\n', bridgeFinalHeader: true });
   pushMessage(id, { type: 'text_delta', text: 'Finished.' });
   pushMessage(id, { type: 'result', text: 'Finished.' });
   const messages = getMessages(id, 0);
   assert.equal(messages.filter(e => e.bridgeFinalHeader).length, 1);
-  assert.equal(messages.filter(e => e.type === 'text_delta').map(e => e.text).join(''), '[0m12] Working.\n\n[1m04]\n\n');
+  assert.equal(messages.filter(e => e.type === 'text_delta').map(e => e.text).join(''), '[12s] Working.\n\n[1:04]\n\n');
   assert.equal(messages.at(-1).text, 'Finished.');
 });
 
 test('native public-commentary pairs survive completed replay while generic tool chatter does not', () => {
   const id = 'native-commentary-replay';
   pushMessage(id, { type: 'user_prompt', text: 'Work' });
-  pushMessage(id, { type: 'tool_start', toolId: 'public-1', name: '[0m15]', bridgePublicUpdate: true });
-  pushMessage(id, { type: 'tool_end', toolId: 'public-1', name: '[0m15]', summary: 'Complete public update.', detail: { output: 'Complete public update.' }, bridgePublicUpdate: true });
+  pushMessage(id, { type: 'tool_start', toolId: 'public-1', name: '[15s]', bridgePublicUpdate: true });
+  pushMessage(id, { type: 'tool_end', toolId: 'public-1', name: '[15s]', summary: 'Complete public update.', detail: { output: 'Complete public update.' }, bridgePublicUpdate: true });
   pushMessage(id, { type: 'tool_end', toolId: 'raw-tool', name: 'Running a command', summary: 'Done' });
-  pushMessage(id, { type: 'text_delta', text: '[0m40]\n\n', bridgeFinalHeader: true });
+  pushMessage(id, { type: 'text_delta', text: '[40s]\n\n', bridgeFinalHeader: true });
   pushMessage(id, { type: 'result', text: 'The final answer.' });
   const messages = getMessages(id, 0);
   assert.deepEqual(messages.map(e => e.type), ['user_prompt', 'tool_start', 'tool_end', 'text_delta', 'result']);
   assert.equal(messages[2].summary, 'Complete public update.');
   assert.equal(messages.some(e => e.toolId === 'raw-tool'), false);
+});
+
+
+test('multiple public activity families survive replay before one complete final answer', () => {
+  const id = 'activity-families-replay';
+  const rows = [
+    ['heading', 'Checking the requested changes.'],
+    ['subagent', 'Helper agent finished'],
+    ['group', 'Read files, searched files'],
+    ['diff', '4 files changed · +48 −0'],
+  ];
+  pushMessage(id, { type: 'user_prompt', text: 'Review this example.' });
+  pushMessage(id, { type: 'status', state: 'busy' });
+  for (const [kind, summary] of rows) {
+    const toolId = `activity-${kind}`;
+    pushMessage(id, { type: 'tool_start', toolId, name: '[12s]', bridgePublicUpdate: true });
+    pushMessage(id, { type: 'tool_end', toolId, name: '[12s]', summary,
+      detail: { output: summary }, bridgePublicUpdate: true });
+  }
+  pushMessage(id, { type: 'text_delta', text: '[15s]\n\n', bridgeFinalHeader: true });
+  pushMessage(id, { type: 'text_delta', text: 'Partial final' });
+  pushMessage(id, { type: 'status', state: 'think_end' });
+  pushMessage(id, { type: 'status', state: 'text_end' });
+  pushMessage(id, { type: 'result', text: 'The complete final answer.', success: true });
+  pushMessage(id, { type: 'status', state: 'idle' });
+
+  const messages = getMessages(id, 0);
+  const finalIndex = messages.findIndex(event => event.type === 'result');
+  assert.equal(messages.filter(event => event.type === 'result').length, 1);
+  assert.equal(messages[finalIndex].text, 'The complete final answer.');
+  assert.equal(messages.filter(event => event.bridgeFinalHeader).length, 1);
+  assert.equal(messages.some(event => event.type === 'text_delta' && !event.bridgeFinalHeader), false);
+  assert.deepEqual(messages.filter(event => event.type === 'tool_end').map(event => event.summary), rows.map(([, summary]) => summary));
+  for (const [kind] of rows) {
+    const pair = messages.map((event, index) => ({ event, index })).filter(({ event }) => event.toolId === `activity-${kind}`);
+    assert.deepEqual(pair.map(({ event }) => event.type), ['tool_start', 'tool_end']);
+    assert.ok(pair.every(({ event, index }) => event.bridgePublicUpdate === true && index < finalIndex));
+  }
+  assert.equal(messages.at(-1).state, 'idle');
 });

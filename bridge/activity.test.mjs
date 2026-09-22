@@ -23,11 +23,16 @@ test('commentary excludes final answers and structured questions', () => {
   assert.equal(publicCommentary({ type: 'agentMessage', phase: 'commentary', text: 'Pick one', questions: [{}] }), null);
 });
 
-test('message time labels use bracketed minutes and padded seconds without inventing unknown times', () => {
-  assert.equal(messageTimeLabel(155999), '[2m35]');
-  assert.equal(messageTimeLabel(0), '[0m00]');
-  assert.equal(messageTimeLabel(9000), '[0m09]');
-  assert.equal(messageTimeLabel(3723000), '[62m03]');
+test('message time labels switch from seconds to minutes at one minute without inventing unknown times', () => {
+  assert.equal(messageTimeLabel(155999), '[2:35]');
+  assert.equal(messageTimeLabel(0), '[0s]');
+  assert.equal(messageTimeLabel(2000), '[2s]');
+  assert.equal(messageTimeLabel(54000), '[54s]');
+  assert.equal(messageTimeLabel(59999), '[59s]');
+  assert.equal(messageTimeLabel(60000), '[1:00]');
+  assert.equal(messageTimeLabel(64000), '[1:04]');
+  assert.equal(messageTimeLabel(1605000), '[26:45]');
+  assert.equal(messageTimeLabel(3723000), '[62:03]');
   for (const missing of [null, undefined, -1, NaN, Infinity, '1000']) assert.equal(messageTimeLabel(missing), '');
 });
 

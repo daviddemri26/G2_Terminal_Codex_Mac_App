@@ -378,10 +378,23 @@ class ControlTests(unittest.TestCase):
             with self.subTest(data=data[:60]), self.assertRaises(common.BridgeError):
                 control.read_preferences(io.BytesIO(data))
 
-    def activate_formatting_release(self):
-        (self.source / 'dist/desktop-bridge/provider.mjs').write_text("version: 'G2 Desktop Bridge 0.2.8'")
+    def activate_formatting_release(self, version='G2 Desktop Bridge 0.2.9'):
+        (self.source / 'dist/desktop-bridge/provider.mjs').write_text("version: '" + version + "'")
         self.record['activeRelease'] = manage.prepare_release(self.source, self.support, '/test/node')
         common.atomic_json(self.support / 'control.json', self.record)
+
+    def test_current_and_previous_formatting_releases_keep_text_settings_available(self):
+        for version in ('G2 Desktop Bridge 0.2.8', 'G2 Desktop Bridge 0.2.9'):
+            with self.subTest(version=version):
+                self.activate_formatting_release(version)
+                self.assertIn(version, control.FORMATTING_VERSIONS)
+                result = control.status(self.support)
+                self.assertTrue(result['formattingSupported'])
+                self.assertTrue(result['canChangeFormatting'])
+                control.mutate('reset-formatting', self.support)
+                self.assertEqual(common.read_json(self.support / 'preferences.json')['textFormatting'],
+                                 control.DEFAULT_TEXT_FORMATTING)
+        self.assertEqual(self.mutations(), [])
 
     def test_old_release_reports_default_settings_but_cannot_save_unsupported_formatting(self):
         result = control.status(self.support)

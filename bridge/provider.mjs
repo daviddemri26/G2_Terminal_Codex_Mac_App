@@ -8,6 +8,8 @@ import { DesktopIpcClient, canonicalTurns, readableHistory, conversationStatus, 
 import { DeliveryStore } from './delivery-store.mjs';
 import { buildActionPresentation, decodeActionReply, progressMessage, clearProgressMessage } from './client-contract.mjs';
 import { publicActivityHeading, publicToolLabel, turnElapsedMs, formatElapsed, messageTimeLabel } from './activity.mjs';
+import { activityEntriesForTurn } from './activity-extras.mjs';
+import { summarizeTurnDiff } from './diff-summary.mjs';
 import { DEFAULT_TEXT_FORMATTING, readTextFormatting, validateTextFormatting, formatAssistantText, streamAssistantText } from './text-formatting.mjs';
 
 const exec = promisify(execFile);
@@ -72,6 +74,7 @@ export function createDesktopProvider(emit, options = {}) {
   function endActivity(id) {
     const local = sessions.get(id); if (!local) return;
     closeCommentary(id);
+    for (const record of local.extraTexts?.values() ?? []) emitExtra(id, record);
     send(id, { type: 'status', state: 'think_end' });
     send(id, { type: 'status', state: 'text_end' });
     send(id, clearProgressMessage());
@@ -122,14 +125,14 @@ export function createDesktopProvider(emit, options = {}) {
     }
     return header;
   }
-  function showCommentary(id, turn, messages, initial) {
+  function showCommentary(id, turn, messages, initial, latestCommentaryId) {
     const local = sessions.get(id);
     const commentary = messages.filter(item => item.phase === 'commentary' && !item.questions?.length);
     for (const item of commentary) {
       if (!item.text) continue;
       let record = local.commentaryTexts.get(item.id);
       if (!record) {
-        const historical = initial && item !== commentary.at(-1);
+        const historical = initial && item.id !== (latestCommentaryId ?? commentary.at(-1)?.id);
         record = { id: item.id, text: item.text, sentText: historical ? item.text : '',
           renderedText: historical ? formatAssistantText(item.text, local.formatting) : '',
           changedAt: now(), segment: 0, name: messageHeader(id, turn, item.id, false, !historical).trimEnd() };
@@ -141,6 +144,86 @@ export function createDesktopProvider(emit, options = {}) {
       // fallback handles a final progress paragraph while work waits elsewhere.
       if (terminal(turn.status) || item !== turn.items?.at(-1)) emitCommentary(id, record, true);
     }
+  }
+  function emitExtra(id, record) {
+    const local = sessions.get(id);
+    if (!record?.text || record.active === false || record.text === record.sentText) return;
+    // Never append activity after final text, or reveal hidden progress later.
+    if (!local.formatting.showProgressUpdates || local.finalLabelSent || local.finished) {
+      record.sentText = record.text; return;
+    }
+    const toolId = `bridge-activity:${local.turnKey}:${record.key}:${record.segment++}`;
+    send(id, { type: 'tool_start', toolId, name: record.name, bridgePublicUpdate: true });
+    send(id, { type: 'tool_end', toolId, name: record.name, summary: record.text,
+      detail: { output: record.text }, bridgePublicUpdate: true });
+    record.sentText = record.text;
+  }
+  function showExtra(id, turn, entry, { historical = false, complete = false, capture = true } = {}) {
+    const local = sessions.get(id);
+    let record = local.extraTexts.get(entry.key);
+    if (!record) {
+      record = { ...entry, sentText: historical ? entry.text : '', changedAt: now(), segment: 0,
+        name: messageHeader(id, turn, entry.itemId, false, capture && !historical).trimEnd() };
+      local.extraTexts.set(entry.key, record);
+    } else if (record.text !== entry.text) {
+      record.text = entry.text; record.changedAt = now();
+      if (entry.kind === 'diff') {
+        record.itemId = entry.itemId;
+        record.name = messageHeader(id, turn, entry.itemId, false, capture).trimEnd();
+      }
+    }
+    record.active = true;
+    if (!local.formatting.showProgressUpdates) record.sentText = record.text;
+    if (complete) emitExtra(id, record);
+  }
+  function showPublicUpdates(id, turn, messages, initial) {
+    if (!turn) return;
+    const entries = activityEntriesForTurn(turn), byItem = new Map();
+    for (const entry of entries) {
+      if (!byItem.has(entry.itemId)) byItem.set(entry.itemId, []);
+      byItem.get(entry.itemId).push(entry);
+    }
+    const items = turn.items ?? [];
+    const latestCommentary = messages.filter(item => item.phase === 'commentary' && !item.questions?.length).at(-1);
+    const latestExtra = entries.at(-1);
+    const latestVisibleIndex = Math.max(items.findIndex(item => item.id === latestCommentary?.id),
+      items.findIndex(item => item.id === latestExtra?.itemId));
+    for (const [index, item] of items.entries()) {
+      if (item.type === 'agentMessage') showCommentary(id, turn, [item], initial, latestCommentary?.id);
+      for (const entry of byItem.get(item.id) ?? []) {
+        showExtra(id, turn, entry, { historical: initial && index < latestVisibleIndex, capture: !initial,
+          complete: terminal(turn.status) || index < items.length - 1 || entry.kind !== 'heading' });
+      }
+    }
+    const summary = summarizeTurnDiff(turn);
+    const activeKeys = new Set(entries.map(entry => entry.key));
+    if (summary) activeKeys.add('diff-summary');
+    for (const [key, record] of sessions.get(id).extraTexts) record.active = activeKeys.has(key);
+    if (summary) showExtra(id, turn, { key: 'diff-summary', itemId: `diff:${summary.fingerprint}`,
+      text: summary.text, kind: 'diff' }, { complete: terminal(turn.status), capture: !initial });
+    // Pending titles/statistics must settle before the final answer starts.
+    if (messages.some(item => !item.questions?.length && (item.phase === 'final_answer' || !item.phase) && item.text)) {
+      closeCommentary(id);
+      for (const record of sessions.get(id).extraTexts.values()) emitExtra(id, record);
+    }
+  }
+  function historyWithActivity(turns) {
+    return turns.flatMap(turn => {
+      const items = turn.items ?? [], positions = new Map(items.map((item, index) => [item.id, index]));
+      const messages = readableHistory({ turns: [turn] }, Number.MAX_SAFE_INTEGER)
+        .map(message => ({ ...message, position: positions.get(message.itemId) ?? -1 }));
+      for (const entry of activityEntriesForTurn(turn)) messages.push({ role: 'assistant', phase: 'commentary',
+        text: entry.text, turnId: turn.turnId, itemId: `activity:${entry.key}`, headerItemId: entry.itemId,
+        position: (positions.get(entry.itemId) ?? items.length) + 0.1 });
+      const summary = summarizeTurnDiff(turn);
+      if (summary) {
+        const finalIndex = items.findIndex(item => item.type === 'agentMessage' && !item.questions?.length
+          && (item.phase === 'final_answer' || !item.phase) && item.text);
+        messages.push({ role: 'assistant', phase: 'commentary', text: summary.text, turnId: turn.turnId,
+          itemId: `diff:${summary.fingerprint}`, position: finalIndex < 0 ? items.length : finalIndex - 0.1 });
+      }
+      return messages.sort((a, b) => a.position - b.position).map(({ position, ...message }) => message);
+    });
   }
   function sendRunningStats(id, force = false) {
     const local = sessions.get(id), state = client.getState(id), turn = state && canonicalTurns(state).at(-1);
@@ -258,7 +341,7 @@ export function createDesktopProvider(emit, options = {}) {
       local.turnKey = key; local.texts = new Map(); local.finished = false;
       local.formatting = readFormatting(); local.renderedTexts = new Map();
       local.startedAt = now(); local.progress = ''; local.thinking = false;
-      local.commentaryTexts = new Map(); local.lastStatsAt = undefined;
+      local.commentaryTexts = new Map(); local.extraTexts = new Map(); local.lastStatsAt = undefined;
       local.finalLabelSent = false; local.finalTextOpen = false;
       if (!initial || !terminal(turn.status)) {
         const text = textInput(turn.params?.input);
@@ -280,7 +363,7 @@ export function createDesktopProvider(emit, options = {}) {
       local.finished = true;
     } else {
       // Public commentary is ordinary visible assistant text in the Mac app.
-      if (!done || !local.finished) showCommentary(id, turn, messages, initial);
+      if (!done || !local.finished) showPublicUpdates(id, turn, messages, initial);
       const commentary = messages.filter(i => i.phase === 'commentary' && !i.questions?.length).at(-1)?.text;
       const activeTool = items.filter(i => TOOL_NAMES[i.type] && i.status === 'inProgress').at(-1);
       const heading = items.map(publicActivityHeading).filter(Boolean).at(-1);
@@ -429,6 +512,9 @@ export function createDesktopProvider(emit, options = {}) {
       for (const record of local.commentaryTexts?.values() ?? []) {
         if (now() - record.changedAt >= (options.commentarySettleMs ?? 1500)) emitCommentary(id, record);
       }
+      for (const record of local.extraTexts?.values() ?? []) {
+        if (now() - record.changedAt >= (options.commentarySettleMs ?? 1500)) emitExtra(id, record);
+      }
     }
   }, Math.min(250, options.commentarySettleMs ?? 1500));
   commentaryInterval.unref();
@@ -443,17 +529,17 @@ export function createDesktopProvider(emit, options = {}) {
       }));
     },
     async getSessionStatus(id) { return sessions.get(id)?.status ?? 'idle'; },
-    async getInfo() { return { account: {}, model: 'Codex — Mac app', version: 'G2 Desktop Bridge 0.2.8', provider: 'codex' }; },
+    async getInfo() { return { account: {}, model: 'Codex — Mac app', version: 'G2 Desktop Bridge 0.2.9', provider: 'codex' }; },
     async getHistory(id, limit = 10) {
       const state = await watch(id);
       const turns = canonicalTurns(state);
       const questions = new Set(turns.flatMap(turn => (turn.items ?? []).filter(item => item.questions?.length).map(item => item.id)));
       const byTurn = new Map(turns.map(turn => [turn.turnId, turn]));
       const formatting = terminal(turns.at(-1)?.status) ? readFormatting() : sessions.get(id).formatting;
-      return readableHistory(state, 1000).filter(m => !questions.has(m.itemId))
+      return historyWithActivity(turns).filter(m => !questions.has(m.itemId))
         .filter(m => formatting.showProgressUpdates || m.role !== 'assistant' || m.phase !== 'commentary')
         .map(m => m.role === 'user' ? { ...m, text: displayUserText(m.text) }
-          : { ...m, text: messageHeader(id, byTurn.get(m.turnId), m.itemId, m.phase !== 'commentary', false, formatting)
+          : { ...m, text: messageHeader(id, byTurn.get(m.turnId), m.headerItemId ?? m.itemId, m.phase !== 'commentary', false, formatting)
             + formatAssistantText(m.text, formatting) }).slice(-Math.max(1, limit));
     },
     async watch(id) { try { return await watch(id, { reshowAction: true }); } catch (error) { report(id, error); throw error; } },

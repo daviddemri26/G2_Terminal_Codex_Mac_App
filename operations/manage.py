@@ -18,8 +18,8 @@ from common import (APP_INFO, BridgeError, DEFAULT_CONFIG, DEFAULT_SOURCE, DEFAU
                     digest, exclusive_lock, idle, load_config, make_plist, port_available,
                     pending_delivery, private_directory, read_json, status, validate_release)
 
-VERSIONS = ('G2 Desktop Bridge 0.1', 'G2 Desktop Bridge 0.2', 'G2 Desktop Bridge 0.2.1', 'G2 Desktop Bridge 0.2.2', 'G2 Desktop Bridge 0.2.3', 'G2 Desktop Bridge 0.2.4', 'G2 Desktop Bridge 0.2.5', 'G2 Desktop Bridge 0.2.6', 'G2 Desktop Bridge 0.2.7', 'G2 Desktop Bridge 0.2.8')
-INSTALL_VERSION = 'G2 Desktop Bridge 0.2.8'
+VERSIONS = ('G2 Desktop Bridge 0.1', 'G2 Desktop Bridge 0.2', 'G2 Desktop Bridge 0.2.1', 'G2 Desktop Bridge 0.2.2', 'G2 Desktop Bridge 0.2.3', 'G2 Desktop Bridge 0.2.4', 'G2 Desktop Bridge 0.2.5', 'G2 Desktop Bridge 0.2.6', 'G2 Desktop Bridge 0.2.7', 'G2 Desktop Bridge 0.2.8', 'G2 Desktop Bridge 0.2.9')
+INSTALL_VERSION = 'G2 Desktop Bridge 0.2.9'
 OPERATIONS = ('common.py', 'supervisor.py', 'manage.py', 'control.py', 'desktop_location.py')
 
 

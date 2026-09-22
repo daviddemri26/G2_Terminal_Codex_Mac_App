@@ -135,11 +135,12 @@ export function formatElapsed(milliseconds) {
     : `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-/** A fixed time label; total minutes keep the same format for long tasks. */
+/** Fixed elapsed label: seconds below a minute, then total minutes and padded seconds. */
 export function messageTimeLabel(milliseconds) {
   if (typeof milliseconds !== 'number' || !Number.isFinite(milliseconds) || milliseconds < 0) return '';
   const seconds = Math.floor(milliseconds / 1000);
-  return `[${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}]`;
+  return seconds < 60 ? `[${seconds}s]`
+    : `[${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}]`;
 }
 
 /** Independent presentation data. The provider controls transport and deduplication. */

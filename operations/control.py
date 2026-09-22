@@ -25,7 +25,7 @@ MAX_INPUT_BYTES = 4096
 MAX_JSON_BYTES = 4 * 1024 * 1024
 DEFAULT_TEXT_FORMATTING = {'showTimestamps': True, 'showProgressUpdates': True,
                            'paragraphSpacing': 'original'}
-FORMATTING_VERSIONS = ('G2 Desktop Bridge 0.2.8',)
+FORMATTING_VERSIONS = ('G2 Desktop Bridge 0.2.8', 'G2 Desktop Bridge 0.2.9')
 STATES = {
     'not_installed': ('The managed bridge is not installed.', 'Install a reviewed release from the project.'),
     'stopped': ('The bridge is stopped.', 'Start the bridge when you are ready.'),

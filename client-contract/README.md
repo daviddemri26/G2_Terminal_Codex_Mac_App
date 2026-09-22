@@ -1,4 +1,4 @@
-# Even Terminal client contract for Desktop Bridge 0.2.7
+# Even Terminal client contract for Desktop Bridge 0.2.9
 
 The canonical module is `bridge/client-contract.mjs`. It adapts normalized desktop pending actions to the existing Even Terminal wire protocol. This directory holds its documentation and tests. It does not modify or redistribute the phone/glasses application. All bridge-written labels and errors are English. User text and Codex output retain their original language.
 
@@ -69,9 +69,41 @@ For a client that explicitly supplies the matching `actionToken`, a single free-
 
 Earlier physical question selections preserved the exact tokenized question key. The readable numbering and selected-answer flow were subsequently confirmed in the user's physical tests. Custom permission-key echoing also requires validation: if a client hard-codes the three old values, approvals fail closed and need Codex/Remote or a separately patched client. The bridge never silently falls back to uncorrelated approvals.
 
+## Additional activity text in 0.2.9
+
+The added activity rows use the same matched `tool_start`/`tool_end` family as
+public commentary. Both events carry `bridgePublicUpdate: true`, allowing the
+existing replay buffer to retain them before the complete final answer. These
+rows are presentation data, not new executable tool requests.
+
+The supported sources are the compact public activity headings already displayed
+by the Mac App, explicit subagent lifecycle metadata, grouped read/search/command
+metadata, and compact file-change summaries. File and line counts are derived
+only from available changes; uncertain line totals are omitted. The new summary
+rows do not copy raw private reasoning, command arguments, tool output, file names,
+or diff contents. Action groups wait for a
+public message boundary and completed tools. Public headings wait for a boundary
+or 1.5 seconds without changes. Withdrawn pending headings are discarded.
+Activity discovered when reopening a running task has no elapsed label unless
+its native timestamp is available. New activity cannot appear after final text,
+including after a reconnect.
+
+The provider suppresses repeated observations, preserves its deduplication state
+across reconnects, and avoids restreaming completed historical activity as new
+work. Added rows follow the turn's `showProgressUpdates` setting; disabling that
+setting does not hide the final answer or interactive questions and approvals.
+They are retained in event replay and included with the native messages in
+ordinary history, in their source order before the final answer. Historical rows
+may use ordinary brightness. The stock client still controls the dim shade,
+wrapping, and built-in `tool end:` prefix.
+
+The 0.2.9 source, integration, installation, and physical-device validation results
+are recorded separately in [the release validation record](../docs/validation-0.2.9.md).
+The historical physical checks below do not certify these new activity rows.
+
 ## Display behavior and remaining limits
 
-Public commentary uses matched `tool_start`/`tool_end` activity rows, the event family the user physically observed as dimmer. Their shared `name` is only the fixed timestamp, such as `[2m35]`; the end event carries the unchanged full paragraph in both `summary` and `detail: {output: paragraph}`. No dash padding or leading newline is added. The native client owns the `tool end:` prefix and ` · ` joining punctuation. There is no duplicate `text_delta` copy. Generic raw tool rows are suppressed. Both paired events retain the bridge-only `bridgePublicUpdate` marker for replay; this marker adds no native style capability.
+Public commentary uses matched `tool_start`/`tool_end` activity rows, the event family the user physically observed as dimmer. Their shared `name` is only the fixed timestamp, such as `[2:35]`; the end event carries the unchanged full paragraph in both `summary` and `detail: {output: paragraph}`. No dash padding or leading newline is added. The native client owns the `tool end:` prefix and ` · ` joining punctuation. There is no duplicate `text_delta` copy. Generic raw tool rows are suppressed. Both paired events retain the bridge-only `bridgePublicUpdate` marker for replay; this marker adds no native style capability.
 
 Paragraphs flush at a native item boundary, turn closure/disconnection, or after 1.5 seconds without new text. A late suffix gets a new paired row containing only the missing text, never a repeated tool_end for the same ID. The final answer remains ordinary text, preceded by its timestamp and an extra blank line. The bridgeFinalHeader marker preserves this timestamp during completed replay.
 

@@ -27,6 +27,9 @@ for the glasses to work.
 
 ## Text
 
+Message timestamps use `[2s]` or `[54s]` below one minute, then `[1:04]` or
+`[26:45]` from one minute onward. Long tasks keep total minutes, such as `[62:03]`.
+
 Use **Text** to choose message timestamps, live progress updates, and paragraph
 spacing. **Original** spacing with both switches on preserves the previous reading
 experience. Adjust the example, then choose **Save changes**. **Reset to original**
@@ -35,7 +38,17 @@ restores the original selections; save to apply them.
 Changes take effect on the next response or when reopening a completed conversation.
 Questions, approval choices, reply identifiers, and code are preserved. The example
 illustrates text choices; font size, colors, wrapping, and display layout remain
-controlled by Even Terminal. Bridge 0.2.8 is required to save these settings.
+controlled by Even Terminal. Text settings are supported by bridges 0.2.8 and 0.2.9.
+
+Bridge 0.2.9 adds public activity headings, subagent lifecycle updates, grouped
+reading/search/command activity, and a compact file-change summary to the live
+progress display. Line totals appear only when the data supports reliable
+counting; uncertain totals are omitted. Subagent states are shown only when
+reported explicitly by the Mac App. These updates use the same dim activity rows
+as public commentary; Even Terminal supplies their built-in labels. Turning **Live progress updates**
+off hides the added rows both live and in reopened history. The final answer
+remains a separate message. Reopened history includes the activity text,
+but its brightness is controlled by Even Terminal and may differ from live rows.
 
 ## Connect
 
