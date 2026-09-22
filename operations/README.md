@@ -73,7 +73,8 @@ preserve that preference. Closing or quitting the native app has no lifecycle ef
 on stdin. Spacing also accepts `compact` or `comfortable`. `reset-formatting --apply`
 restores these defaults. Preferences live in private `preferences.json`, affect
 subsequent responses/reopened history, and never change interactive requests or
-delivery records. Runtime 0.2.8 is required; old rollback versions cannot apply them.
+delivery records. Reviewed runtimes 0.2.8, 0.2.9, 0.3.0, 0.3.1, and 0.3.2 support these settings;
+earlier rollback versions cannot apply them.
 
 For first installation, use the guided installer described in
 [getting started](../docs/getting-started.md). `setup.py inspect` is read-only and
@@ -82,8 +83,16 @@ its JSON contains a private token/URL for the app to turn into a QR code. Never
 include this output in logs, screenshots, issue reports, or CI.
 
 Lifecycle mutations verify the installation/LaunchAgent owner and use the shared
-management lock. Active or uncertain deliveries block disruptive changes. Full
-release integrity is checked before start/restart/rollback. A completed task's
+management lock. Active or uncertain deliveries block disruptive changes. Bridge
+0.3.1 also checks `state/prompt-queue.json`: any saved entry, including a paused
+one, blocks disruptive maintenance even when the task is idle or service stopped.
+A malformed, symlinked, nonregular, or oversized queue file fails closed; a valid
+empty file or absent legacy file still respects the existing delivery guard.
+This private file contains queued prompt text and must not be copied into logs
+or diagnostic reports. Clear or finish waiting entries through the queue controls;
+never delete the file to bypass maintenance checks.
+
+Full release integrity is checked before start/restart/rollback. A completed task's
 idle event stream alone does not prevent maintenance. Only the supervisor's owned
 HTTP child is stopped; the Mac task engine is not.
 

@@ -177,8 +177,8 @@ class OperationsTests(unittest.TestCase):
         for version in manage.VERSIONS:
             provider.write_text("version: '" + version + "'")
             self.assertEqual(manage.source_version(self.source), version)
-        self.assertEqual(manage.INSTALL_VERSION, 'G2 Desktop Bridge 0.2.9')
-        for version in ('0.2.10', '0.2.20', '0.2.30', '0.2.40', '0.2.50', '0.2.60', '0.2.70', '0.2.3-beta', '0.2.4-beta', '0.2.5-beta', '0.2.6-beta', '0.2.7-beta'):
+        self.assertEqual(manage.INSTALL_VERSION, 'G2 Desktop Bridge 0.3.2')
+        for version in ('0.3.3', '0.3.02', '0.3.2-beta', '0.3.01', '0.3.1-beta', '0.3.00', '0.3.0-beta', '0.2.10', '0.2.20', '0.2.30', '0.2.40', '0.2.50', '0.2.60', '0.2.70', '0.2.3-beta', '0.2.4-beta', '0.2.5-beta', '0.2.6-beta', '0.2.7-beta'):
             provider.write_text("version: 'G2 Desktop Bridge " + version + "'")
             with self.assertRaises(common.BridgeError):
                 manage.source_version(self.source)
@@ -201,6 +201,7 @@ class OperationsTests(unittest.TestCase):
             'G2 Desktop Bridge 0.2.5',
             'G2 Desktop Bridge 0.2.6',
             'G2 Desktop Bridge 0.2.7', 'G2 Desktop Bridge 0.2.8', 'G2 Desktop Bridge 0.2.9',
+            'G2 Desktop Bridge 0.3.0', 'G2 Desktop Bridge 0.3.1', 'G2 Desktop Bridge 0.3.2',
         })
         self.assertIn(manage.INSTALL_VERSION, manage.VERSIONS)
 
@@ -381,6 +382,91 @@ class OperationsTests(unittest.TestCase):
         common.atomic_json(self.support / 'state/delivery.json',
                            {'version': 1, 'prompts': {}, 'actions': {}, 'receipts': {}})
         self.assertFalse(common.pending_delivery(self.support))
+
+
+    def test_absent_or_empty_prompt_queue_preserves_existing_delivery_guard(self):
+        self.assertFalse(common.pending_delivery(self.support))
+        queue = self.support / 'state/prompt-queue.json'
+        common.atomic_json(queue, {'version': 1, 'entries': []})
+        self.assertFalse(common.pending_delivery(self.support))
+        delivery = self.support / 'state/delivery.json'
+        common.atomic_json(delivery, {'version': 1, 'prompts': {}, 'actions': {}, 'receipts': {}})
+        self.assertFalse(common.pending_delivery(self.support))
+        common.atomic_json(delivery, {'version': 1, 'prompts': {'synthetic': {}}, 'actions': {}, 'receipts': {}})
+        self.assertTrue(common.pending_delivery(self.support))
+        queue.unlink()
+        self.assertTrue(common.pending_delivery(self.support))
+
+    def test_every_nonempty_queue_phase_blocks_without_a_delivery_journal(self):
+        queue = self.support / 'state/prompt-queue.json'
+        for phase in ('queued', 'paused', 'sending', 'unknown'):
+            with self.subTest(phase=phase):
+                common.atomic_json(queue, {'version': 1, 'entries': [
+                    {'id': 'synthetic', 'phase': phase, 'text': 'PRIVATE_QUEUED_TEXT'}]})
+                self.assertFalse((self.support / 'state/delivery.json').exists())
+                self.assertTrue(common.pending_delivery(self.support))
+
+    def test_invalid_prompt_queue_schema_fails_closed(self):
+        queue = self.support / 'state/prompt-queue.json'
+        common.private_directory(queue.parent)
+        malformed = ['broken PRIVATE_QUEUED_TEXT', 'null', '[]', '5',
+                     json.dumps({'version': 2, 'entries': []}),
+                     json.dumps({'version': True, 'entries': []}),
+                     json.dumps({'version': 1}),
+                     json.dumps({'version': 1, 'entries': None}),
+                     json.dumps({'version': 1, 'entries': {}}),
+                     json.dumps({'version': 1, 'entries': [], 'unexpected': True})]
+        for index, value in enumerate(malformed):
+            with self.subTest(case=index):
+                queue.write_text(value)
+                self.assertTrue(common.pending_delivery(self.support))
+
+    def test_prompt_queue_symlinks_and_nonregular_files_fail_closed(self):
+        queue = self.support / 'state/prompt-queue.json'
+        common.private_directory(queue.parent)
+        target = self.root / 'empty-queue.json'
+        common.atomic_json(target, {'version': 1, 'entries': []})
+        queue.symlink_to(target)
+        self.assertTrue(common.pending_delivery(self.support))
+        queue.unlink()
+        queue.symlink_to(self.root / 'missing-queue.json')
+        self.assertTrue(common.pending_delivery(self.support))
+        queue.unlink()
+        queue.mkdir()
+        self.assertTrue(common.pending_delivery(self.support))
+        queue.rmdir()
+        os.mkfifo(queue)
+        self.assertTrue(common.pending_delivery(self.support))
+
+    def test_prompt_queue_size_is_bounded_at_two_mebibytes(self):
+        queue = self.support / 'state/prompt-queue.json'
+        common.private_directory(queue.parent)
+        base = b'{"version":1,"entries":[]}'
+        limit = 2 * 1024 * 1024
+        queue.write_bytes(base + b' ' * (limit - len(base)))
+        self.assertFalse(common.pending_delivery(self.support))
+        with queue.open('ab') as stream:
+            stream.write(b' ')
+        with patch.object(common.json, 'loads') as parse:
+            self.assertTrue(common.pending_delivery(self.support))
+            parse.assert_not_called()
+
+    def test_saved_queue_blocks_maintenance_before_idle_or_stopped_service_probe(self):
+        queue = self.support / 'state/prompt-queue.json'
+        common.atomic_json(queue, {'version': 1, 'entries': [
+            {'id': 'synthetic', 'phase': 'paused', 'text': 'PRIVATE_QUEUED_TEXT'}]})
+        before = common.digest(queue)
+        for stopped in (False, True):
+            with self.subTest(stopped=stopped), \
+                 patch.object(manage, 'port_available', return_value=stopped) as port, \
+                 patch.object(manage, 'idle', return_value=True) as idle:
+                with self.assertRaises(common.BridgeError) as caught:
+                    manage.assert_idle(self.config, self.support)
+                self.assertNotIn('PRIVATE_QUEUED_TEXT', str(caught.exception))
+                port.assert_not_called()
+                idle.assert_not_called()
+        self.assertEqual(common.digest(queue), before)
+
 
 
 class LaunchAtLoginTests(unittest.TestCase):

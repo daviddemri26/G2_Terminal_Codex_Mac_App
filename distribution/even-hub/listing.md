@@ -13,8 +13,8 @@ and device validation must match the final description and screenshots.
 | --- | --- |
 | Full product title | Even Terminal for Codex Mac App Guide |
 | Even Hub name (19 characters) | Codex Mac App Guide |
-| Subtitle | Setup guide for the Codex Mac App and Even Terminal |
-| Short description | A setup guide for using Even Terminal with the Codex Mac App, without a separate Codex CLI workflow. |
+| Subtitle | Steer, Queue, and continue your Codex Mac App conversations on G2 |
+| Short description | Learn to continue the same Codex Mac App conversation across Mac, Remote on iPhone, and G2 — with Steer and Queue on your glasses. |
 | Category, if available | Utilities or Reference; select the closest category offered by the portal |
 | Website | https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/ |
 | Support | https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/issues |
@@ -22,12 +22,13 @@ and device validation must match the final description and screenshots.
 
 ## Full description
 
-### Use Even Terminal with the Codex Mac App
+### One conversation. Mac, phone, glasses.
 
-Already use Even G2, Even Terminal, and the Codex Mac App? Even Terminal for Codex Mac App helps you
-find and continue supported Codex Mac App conversations from your glasses. Your work stays
-in the same Codex Mac App conversation, so you can pick it up again when you return to
-your desk. You do not need to start a separate Codex CLI session.
+Work in **Codex Mac App**, continue with **Remote on iPhone**, and use the same
+supported Mac conversation in **Even Terminal on G2**. The separate Mac bridge
+adds **Steer / Queue** controls on the glasses: give Codex new context while it
+works, or save another prompt for the next turn. Keep the same task when you
+return to your desk, without a separate Codex CLI workflow.
 
 **Even Terminal for Codex Mac App Guide is the small setup and reference companion.** It explains what
 you need, how to install the Mac bridge, how to pair your phone, and where to find
@@ -39,7 +40,31 @@ copy a link into your browser when needed. Actual conversations and replies use
 Installing this guide from Even Hub does not install Even Terminal for Codex Mac App on your Mac. The
 Mac software is a separate download with its own compatibility checks.
 
-### Why the Mac bridge exists
+### Steer now. Queue what's next.
+
+The separately installed **Even Terminal for Codex Mac App** bridge adds:
+
+- **Add prompt:** dictate while Codex keeps working on your Mac.
+- **Steer:** add context to the response in progress.
+- **Queue:** save up to ten prompts per conversation for later turns, in order,
+  with waiting prompts retained across bridge restarts.
+- **View queue:** read drafts, remove items, pause/resume, or clear waiting work
+  directly from your glasses.
+- **Stop response:** stop the active work and pause waiting prompts.
+
+Use the normal long press, confirm **Yes**, choose **Add prompt**, then dictate
+with a second long press. Choose **Steer** or **Queue** after capture. Ordinary
+idle follow-ups send directly. This is an explicit glasses control flow added
+by the bridge to the pinned Even Terminal 0.10.4; stock 0.10.4 already has an
+automatic internal queue, but not this bridge's menu and persistent queue workflow.
+
+The bridge queue is independent of the Mac App's native queue. Prompts appear in
+the shared Mac/Remote conversation when sent. Remote must already be set up to
+access the Mac and is not a relay in the glasses connection. Create new
+conversations on the Mac or Remote first; New session from the glasses is not
+supported through this connection.
+
+### Integrated with the Codex Mac App
 
 Even Terminal for Codex Mac App connects Even Terminal to the task engine already used by the Codex
 Mac App. It can reopen supported local conversations and their history, show
@@ -83,7 +108,7 @@ The Mac bridge is a **public alpha**. The reviewed combination is:
 - **macOS 14 or later**, with Apple Silicon as the reviewed setup.
 - **Codex Mac App 26.915.31945, build 9922**. The supported application identity
   may be installed as `Codex.app` or `ChatGPT.app`.
-- **Even Terminal for Codex Mac App** bridge **0.2.8**, Mac control app **1.1.1**, pinned Even Terminal **0.10.4**,
+- **Even Terminal for Codex Mac App** bridge **0.3.2**, Mac control app **1.1.5**, pinned Even Terminal **0.10.4**,
   and Node **26.9.0**.
 - Apple's Command Line Tools with **Swift 6 or later and Python 3** for the
   current source installation. There is no Apple-notarized ready-made download.
@@ -131,10 +156,10 @@ Realities product.
 Use real captures of the finished companion. Do not show the Mac bridge UI as
 though it were part of the Hub app, and never capture a real pairing QR.
 
-1. **Know if Even Terminal for Codex Mac App is for you** — A short explanation for Codex Mac App users.
+1. **One conversation across Mac, Remote, and G2** — The guide explains how the separate Mac bridge connects your devices.
 2. **Follow the setup checklist** — Requirements, Mac installation, and pairing.
-3. **Keep a quick reference in sight** — Short instructions on the glasses;
-   detailed guides available on the phone.
+3. **Learn Steer and Queue** — A daily-use reference for adding context now or
+   saving prompts for later; these controls run in Even Terminal with the Mac bridge.
 
 ## Submission review notes
 

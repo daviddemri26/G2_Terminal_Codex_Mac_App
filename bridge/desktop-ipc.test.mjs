@@ -518,10 +518,10 @@ test('optimistic or unconfirmed turn params do not prove an async answer was acc
     { questionItemId: action.id, question: 'Tea or coffee?', answer: 'Coffee' },
   ]) + '\n</send_user_message_question_reply>' }];
   desktop.state.turns.push({ turnId: null, status: 'inProgress', params: { clientUserMessageId: 'optimistic-id', input }, items: [] });
-  assert.equal(pendingActions(desktop.state).length, 1); assert.equal(acceptedAsyncQuestionReplies(desktop.state).length, 0);
+  assert.equal(pendingActions(desktop.state).length, 0, 'an unsettled newer turn must not reactivate historical questions'); assert.equal(acceptedAsyncQuestionReplies(desktop.state).length, 0);
   desktop.state.turns.at(-1).turnId = 'native-turn';
   desktop.state.unconfirmedTurnSubmissions = [{ clientUserMessageId: 'optimistic-id', terminal: false }];
-  assert.equal(pendingActions(desktop.state).length, 1); assert.equal(acceptedAsyncQuestionReplies(desktop.state).length, 0);
+  assert.equal(pendingActions(desktop.state).length, 0, 'an unsettled newer turn must not reactivate historical questions'); assert.equal(acceptedAsyncQuestionReplies(desktop.state).length, 0);
   desktop.state.unconfirmedTurnSubmissions = [];
   assert.equal(pendingActions(desktop.state).length, 0);
   desktop.state.turns.at(-1).items.push({ type: 'userMessage', id: 'canonical-user', content: input });
@@ -599,5 +599,222 @@ test('disconnect after native ack stays acknowledged-pending within the bounded 
     const result = await client.respondAction(THREAD, action.id, choiceFor(action, { answers: { [action.id]: 'Coffee' }, clientUserMessageId: 'acked-id' }));
     assert.equal(result.confirmed, false); assert.equal(result.pending, true); assert.equal(result.acknowledged, true);
     assert.equal(mutations(desktop).length, 1);
+  } finally { await client.close(); }
+});
+
+
+for (const operation of ['startTurn', 'steerTurn', 'interrupt']) {
+  test(`${operation} rejects a changed expected turn after its own refresh without issuing a mutation`, async () => {
+    const desktop = new FakeDesktop();
+    const status = operation === 'startTurn' ? 'completed' : 'inProgress';
+    desktop.state = conversation({ status, canonical: false });
+    const client = desktop.client();
+    try {
+      await client.follow(THREAD);
+      assert.equal(canonicalTurns(client.getState(THREAD)).at(-1).turnId, 'turn-1');
+      desktop.state = conversation({ status, canonical: false });
+      desktop.state.turns[0].turnId = 'turn-2';
+      desktop.revision++;
+      const pending = operation === 'interrupt'
+        ? client.interrupt(THREAD, 'turn-1')
+        : client[operation](THREAD, 'Reviewed draft', 'guarded-message', 'turn-1');
+      await assert.rejects(pending, error => error.code === 'IPC_STALE_TURN' && !error.outcomeUnknown);
+      assert.equal(canonicalTurns(client.getState(THREAD)).at(-1).turnId, 'turn-2');
+      assert.equal(desktop.messages.filter(message => /^thread-follower-(start-turn|steer-turn|interrupt-turn)$/.test(message.method)).length, 0);
+    } finally { await client.close(); }
+  });
+
+  test(`${operation} permits the exact expected turn and preserves its native mutation envelope`, async () => {
+    const desktop = new FakeDesktop();
+    desktop.state = conversation({ status: operation === 'startTurn' ? 'completed' : 'inProgress' });
+    const client = desktop.client();
+    try {
+      const result = operation === 'interrupt'
+        ? await client.interrupt(THREAD, 'turn-1')
+        : await client[operation](THREAD, 'Reviewed draft', 'guarded-message', 'turn-1');
+      const mutations = desktop.messages.filter(message => /^thread-follower-(start-turn|steer-turn|interrupt-turn)$/.test(message.method));
+      assert.equal(mutations.length, 1);
+      assert.equal(mutations[0].targetClientId, OWNER);
+      if (operation === 'interrupt') {
+        assert.equal(result.interruptedTurnId, 'turn-1');
+        assert.equal(mutations[0].params.expectedTurnId, 'turn-1');
+      } else {
+        assert.equal(result.turn.id, 'new-turn');
+        const request = operation === 'startTurn' ? mutations[0].params.turnStart.request : mutations[0].params;
+        assert.equal(request.clientUserMessageId, 'guarded-message');
+      }
+    } finally { await client.close(); }
+  });
+}
+
+test('an expected turn guard prevents starting when the reviewed turn disappeared', async () => {
+  const desktop = new FakeDesktop();
+  desktop.state = conversation({ canonical: false });
+  const client = desktop.client();
+  try {
+    await client.follow(THREAD);
+    desktop.state.turns = [];
+    desktop.revision++;
+    await assert.rejects(client.startTurn(THREAD, 'Do not start', 'guarded-message', 'turn-1'), error => error.code === 'IPC_STALE_TURN');
+    assert.equal(desktop.messages.some(message => message.method === 'thread-follower-start-turn'), false);
+  } finally { await client.close(); }
+});
+
+
+for (const method of ['item/commandExecution/requestApproval', 'item/tool/requestUserInput']) {
+  test(`steerTurn rejects ${method} appearing on the same turn during its final refresh`, async () => {
+    const desktop = new FakeDesktop();
+    desktop.state = conversation({ status: 'inProgress' });
+    const client = desktop.client();
+    try {
+      await client.follow(THREAD);
+      assert.equal(conversationStatus(client.getState(THREAD)), 'busy');
+      desktop.state.requests = [{ id: 'new-native-request', method, params: { threadId: THREAD, turnId: 'turn-1' } }];
+      desktop.revision++;
+      await assert.rejects(client.steerTurn(THREAD, 'Reviewed draft', 'guarded-message', 'turn-1'),
+        error => ['IPC_TASK_BUSY', 'IPC_TASK_AWAITING'].includes(error.code) && !error.outcomeUnknown);
+      assert.equal(canonicalTurns(client.getState(THREAD)).at(-1).turnId, 'turn-1');
+      assert.equal(desktop.messages.some(message => message.method === 'thread-follower-steer-turn'), false);
+    } finally { await client.close(); }
+  });
+}
+
+
+for (const scenario of [
+  { name: 'missing dependency argument', afterTurnId: undefined, error: 'IPC_STALE_TURN' },
+  { name: 'empty dependency argument', afterTurnId: '', error: 'IPC_STALE_TURN' },
+  { name: 'dependency missing from refreshed history', afterTurnId: 'missing-turn', error: 'IPC_STALE_TURN' },
+  { name: 'failed source without explicit resume', sourceStatus: 'failed', error: 'IPC_QUEUE_STOPPED' },
+  { name: 'interrupted source without explicit resume', sourceStatus: 'interrupted', error: 'IPC_QUEUE_STOPPED' },
+  { name: 'failed intermediate response', intermediateStatus: 'failed', error: 'IPC_QUEUE_STOPPED' },
+  { name: 'interrupted intermediate response despite source resume', intermediateStatus: 'interrupted', allowStopped: true, error: 'IPC_QUEUE_STOPPED' },
+  { name: 'interrupted latest response despite source resume', latestStatus: 'interrupted', allowStopped: true, error: 'IPC_QUEUE_STOPPED' },
+  { name: 'completed responses', allow: true },
+  { name: 'failed exact source explicitly resumed', sourceStatus: 'failed', onlySource: true, allowStopped: true, allow: true },
+  { name: 'interrupted exact source explicitly resumed', sourceStatus: 'interrupted', onlySource: true, allowStopped: true, allow: true },
+  { name: 'stopped response before dependency', prefixStatus: 'failed', allow: true },
+]) {
+  test(`queueOnly rechecks ${scenario.name} on its final snapshot before any native mutation`, async () => {
+    const desktop = new FakeDesktop();
+    desktop.state = conversation({ canonical: false });
+    const template = desktop.state.turns[0];
+    const queuedTurn = (turnId, status = 'completed') => ({ ...structuredClone(template), turnId, status });
+    const latestId = scenario.onlySource ? 'queue-source' : 'queue-latest';
+    desktop.state.turns = scenario.onlySource ? [queuedTurn('queue-source')]
+      : [queuedTurn('queue-source'), queuedTurn('queue-middle'), queuedTurn(latestId)];
+    const client = desktop.client();
+    try {
+      await client.follow(THREAD);
+      // Preserve the latest turn ID: only the refreshed history reveals the hazard.
+      desktop.state.turns = scenario.onlySource ? [queuedTurn('queue-source', scenario.sourceStatus)]
+        : [queuedTurn('queue-source', scenario.sourceStatus), queuedTurn('queue-middle', scenario.intermediateStatus), queuedTurn(latestId, scenario.latestStatus)];
+      if (scenario.prefixStatus) desktop.state.turns.unshift(queuedTurn('older-stopped', scenario.prefixStatus));
+      desktop.revision++;
+      const afterTurnId = Object.hasOwn(scenario, 'afterTurnId') ? scenario.afterTurnId : 'queue-source';
+      const submission = client.startTurn(THREAD, 'Queued exact text', 'queue-message-id', latestId,
+        { queueOnly: true, allowStopped: scenario.allowStopped ?? false, afterTurnId });
+      if (scenario.allow) {
+        assert.equal((await submission).turn.id, 'new-turn');
+        const mutation = desktop.messages.filter(message => message.method === 'thread-follower-start-turn');
+        assert.equal(mutation.length, 1);
+        assert.equal(mutation[0].params.turnStart.request.clientUserMessageId, 'queue-message-id');
+        assert.deepEqual(mutation[0].params.turnStart.context, { inheritThreadSettings: true });
+        assert.equal(Object.hasOwn(mutation[0].params.turnStart.request, 'queueOnly'), false);
+      } else {
+        await assert.rejects(submission, error => error.code === scenario.error && !error.outcomeUnknown);
+        assert.equal(desktop.messages.some(message => /^thread-follower-(start-turn|steer-turn)$/.test(message.method)), false);
+      }
+    } finally { await client.close(); }
+  });
+}
+
+
+const asyncReplyInput = (id, answer = 'Already answered on Mac') => [{ type: 'text', text:
+  '<send_user_message_question_reply>\n' + JSON.stringify([{ questionItemId: id, question: 'Tea or coffee?', answer }]) + '\n</send_user_message_question_reply>' }];
+
+for (const status of ['inProgress', 'completed', 'failed', 'interrupted']) {
+  test(`historical async questions stay historical when a newer ${status} turn exists`, () => {
+    const desktop = asyncQuestionDesktop();
+    assert.equal(pendingActions(desktop.state).length, 1);
+    desktop.state.turns.push({ turnId: 'later-real-turn', status, params: { input: [{ type: 'text', text: 'A newer Mac instruction' }] }, items: [] });
+    assert.deepEqual(pendingActions(desktop.state), []);
+  });
+}
+
+for (const status of ['failed', 'interrupted']) {
+  test(`async questions from the current ${status} turn cannot be resumed as new instructions`, () => {
+    const desktop = asyncQuestionDesktop(); desktop.state.turns[0].status = status;
+    assert.deepEqual(pendingActions(desktop.state), []);
+  });
+}
+
+test('canonical accepted steering evidence survives a stale pending optimistic overlay', () => {
+  const state = conversation({ status: 'inProgress' });
+  const nativeTurn = canonicalTurns(state)[0];
+  nativeTurn.items.at(-1).questions = [{ title: 'Tea or coffee?', options: ['Tea', 'Coffee'] }];
+  const questionId = pendingActions(state)[0].id;
+  const reply = { type: 'steeringUserMessage', id: 'native-reply', status: 'accepted',
+    clientUserMessageId: 'native-reply-client', serverUserMessageId: 'native-user-message', input: asyncReplyInput(questionId) };
+  nativeTurn.items.push(reply);
+  state.turns = [{ ...nativeTurn, items: [{ ...reply, status: 'pending', serverUserMessageId: null }] }];
+  assert.equal(acceptedAsyncQuestionReplies(state).some(answer => answer.questionItemId === questionId), true);
+  assert.deepEqual(pendingActions(state), []);
+  assert.equal(reply.status, 'accepted', 'canonical source remains unchanged');
+});
+
+test('an unrelated unconfirmed record without a message identity cannot hide an accepted Mac answer', () => {
+  const desktop = asyncQuestionDesktop();
+  const questionId = pendingActions(desktop.state)[0].id;
+  desktop.state.turns[0].items.push({ type: 'userMessage', id: 'native-answer-without-client-id', content: asyncReplyInput(questionId) });
+  desktop.state.unconfirmedTurnSubmissions = [{ requestId: 'unrelated-request', terminal: false }];
+  assert.equal(acceptedAsyncQuestionReplies(desktop.state).some(answer => answer.questionItemId === questionId), true);
+  assert.deepEqual(pendingActions(desktop.state), []);
+});
+
+for (const change of ['accepted Mac answer', 'new completed turn', 'interrupted source']) {
+  test(`final action refresh refuses an old async reply after ${change}`, async () => {
+    const desktop = asyncQuestionDesktop(); const initial = pendingActions(desktop.state)[0];
+    const client = desktop.client();
+    try {
+      await client.follow(THREAD);
+      if (change === 'accepted Mac answer') desktop.state.turns[0].items.push({
+        type: 'userMessage', id: 'answer-from-mac', content: asyncReplyInput(initial.id), clientId: 'mac-client-id' });
+      else if (change === 'new completed turn') desktop.state.turns.push({ turnId: 'newer-mac-turn', status: 'completed', params: {}, items: [] });
+      else desktop.state.turns[0].status = 'interrupted';
+      desktop.revision++;
+      await assert.rejects(client.respondAction(THREAD, initial.id,
+        choiceFor(initial, { answers: { [initial.id]: 'Obsolete glasses answer' }, clientUserMessageId: 'must-not-send' })),
+        error => error.code === 'IPC_STALE_ACTION' && !error.outcomeUnknown);
+      assert.equal(mutations(desktop).length, 0);
+    } finally { await client.close(); }
+  });
+}
+
+test('an unresolved concurrent Mac submission blocks steering an async answer into the current turn', async () => {
+  const desktop = asyncQuestionDesktop(); desktop.state.turns[0].status = 'inProgress';
+  const initial = pendingActions(desktop.state)[0]; const client = desktop.client();
+  try {
+    await client.follow(THREAD);
+    desktop.state.unconfirmedTurnSubmissions = [{ clientUserMessageId: 'pending-mac-input', terminal: false }];
+    desktop.revision++;
+    await assert.rejects(client.respondAction(THREAD, initial.id,
+      choiceFor(initial, { answers: { [initial.id]: 'Do not steer' }, clientUserMessageId: 'must-not-send' })),
+      error => error.code === 'IPC_TASK_BUSY' && !error.outcomeUnknown);
+    assert.equal(mutations(desktop).length, 0);
+  } finally { await client.close(); }
+});
+
+test('async action fingerprints distinguish a reused item ID on a different source turn', async () => {
+  const desktop = asyncQuestionDesktop(); const initial = pendingActions(desktop.state)[0]; const client = desktop.client();
+  try {
+    await client.follow(THREAD);
+    const replacement = structuredClone(desktop.state.turns[0]); replacement.turnId = 'new-question-turn';
+    desktop.state.turns.push(replacement); desktop.revision++;
+    const current = pendingActions(desktop.state).at(-1);
+    assert.notEqual(current.fingerprint, initial.fingerprint);
+    await assert.rejects(client.respondAction(THREAD, initial.id,
+      choiceFor(initial, { answers: { [initial.id]: 'Old answer' }, clientUserMessageId: 'must-not-send' })),
+      error => error.code === 'IPC_STALE_ACTION');
+    assert.equal(mutations(desktop).length, 0);
   } finally { await client.close(); }
 });

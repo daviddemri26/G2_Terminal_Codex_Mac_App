@@ -123,7 +123,12 @@ function mergeItems(base = [], overlay = []) {
       const prior = out[index];
       // A stale optimistic overlay must not shorten already streamed text.
       const keepText = typeof prior.text === 'string' && typeof item.text === 'string' && prior.text.startsWith(item.text);
-      out[index] = { ...prior, ...item, ...(keepText ? { text: prior.text } : {}) };
+      // An accepted native steering item is immutable receipt evidence. A
+      // stale optimistic overlay must not downgrade it back to pending.
+      const keepAcceptedSteering = prior.type === 'steeringUserMessage' && prior.status === 'accepted' &&
+        item.type === 'steeringUserMessage' && item.status !== 'accepted';
+      out[index] = keepAcceptedSteering ? { ...item, ...prior }
+        : { ...prior, ...item, ...(keepText ? { text: prior.text } : {}) };
     }
   }
   return out;
@@ -226,7 +231,8 @@ export function parseAsyncQuestionReply(text) {
 export function acceptedAsyncQuestionReplies(state) {
   const replies = [];
   const uncertain = new Set((state?.unconfirmedTurnSubmissions ?? [])
-    .filter(submission => submission.terminal !== true).map(submission => submission.clientUserMessageId));
+    .filter(submission => submission.terminal !== true).map(submission => submission.clientUserMessageId)
+    .filter(id => typeof id === 'string' && id));
   const add = (input, clientUserMessageId, turnId, source) => {
     if (!Array.isArray(input) || input.length !== 1 || input[0]?.type !== 'text') return;
     for (const reply of parseAsyncQuestionReply(input[0].text) ?? []) {
@@ -327,16 +333,22 @@ export function pendingActions(state) {
         reason: supported ? null : 'Open the current plan in Codex or Remote before implementing it.' });
     }
   }
-  // Native async questions live on agentMessage items and use ordinary user
-  // input carrying the same tagged reply object as the desktop UI.
-  const items = canonicalTurns(state).flatMap(turn => (turn.items ?? []).map(item => ({ item, turnId: turn.turnId })));
+  // Historical question metadata is not an active request. Native async
+  // notifications target the current turn; a later user instruction supersedes
+  // earlier questions even when their reply items are no longer loaded. Keep
+  // the current completed turn answerable for the supported post-completion
+  // flow, but never turn a stopped or historical question into a new prompt.
+  const current = latestTurn(state);
+  if (typeof current?.turnId !== 'string' || !current.turnId || !['inProgress', 'completed'].includes(current.status)) return actions;
+  const turnId = current.turnId;
   const answered = new Set(acceptedAsyncQuestionReplies(state).map(reply => reply.questionItemId));
-  for (const { item, turnId } of items) {
-    if (item.type !== 'agentMessage') continue;
-    for (const [index, question] of (item.questions ?? []).entries()) {
+  for (const item of current.items ?? []) {
+    if (item.type !== 'agentMessage' || typeof item.id !== 'string' || !item.id || !Array.isArray(item.questions)) continue;
+    for (const [index, question] of item.questions.entries()) {
+      if (!question || typeof question !== 'object' || typeof question.title !== 'string' || !question.title.trim()) continue;
       const id = JSON.stringify(['request_user_input_async', item.id, index]);
       if (answered.has(id)) continue;
-      const source = { id, sourceItemId: item.id, questionIndex: index, question };
+      const source = { id, turnId, sourceItemId: item.id, questionIndex: index, question };
       actions.push({ id, kind: 'async-question', method: 'agentMessage.questions', title: question.title ?? 'Question from Codex',
         description: '', supported: true, fingerprint: requestFingerprint(source), turnId, sourceItemId: item.id,
         questions: normalizedQuestions([{ ...question, id, question: question.title }]), choices: [] });
@@ -677,9 +689,24 @@ export class DesktopIpcClient extends EventEmitter {
     this.emit('state', params.conversationId, entry.state, entry);
   }
 
-  async startTurn(threadId, text, clientUserMessageId) {
+  async startTurn(threadId, text, clientUserMessageId, expectedTurnId, { queueOnly = false, allowStopped = false, afterTurnId } = {}) {
     const entry = await this.refresh(threadId);
+    if (expectedTurnId !== undefined && latestTurn(entry.state)?.turnId !== expectedTurnId) throw new DesktopIpcError('The task changed. Review your prompt again.', { code: 'IPC_STALE_TURN' });
     if (conversationStatus(entry.state) !== 'idle') throw new DesktopIpcError('This desktop task is already running or awaiting input', { code: 'IPC_TASK_BUSY' });
+    if (queueOnly) {
+      const turns = canonicalTurns(entry.state);
+      const sourceIndex = typeof afterTurnId === 'string' && afterTurnId.length
+        ? turns.findIndex(turn => turn.turnId === afterTurnId) : -1;
+      if (sourceIndex < 0) throw new DesktopIpcError('The queued prompt dependency is no longer available. Review the queue.', { code: 'IPC_STALE_TURN' });
+      if (turns.slice(sourceIndex).some((turn, index) => ['failed', 'interrupted'].includes(turn.status) && !(allowStopped === true && index === 0))) {
+        throw new DesktopIpcError('A response stopped before this queued prompt. Review and resume the queue.', { code: 'IPC_QUEUE_STOPPED' });
+      }
+      const turn = turns.at(-1);
+      if (expectedTurnId === undefined || pendingActions(entry.state).length || !turn ||
+          !(turn.status === 'completed' || (allowStopped === true && turn.turnId === afterTurnId && ['failed', 'interrupted'].includes(turn.status)))) {
+        throw new DesktopIpcError('The queued prompt must wait for the current response to finish', { code: 'IPC_TASK_BUSY' });
+      }
+    }
     const response = await this.request('thread-follower-start-turn', turnStartParams(threadId, text, clientUserMessageId), { targetClientId: entry.owner });
     return response.result?.result;
   }
@@ -693,10 +720,12 @@ export class DesktopIpcClient extends EventEmitter {
         commentAttachments: [] } } };
   }
 
-  async steerTurn(threadId, text, clientUserMessageId = randomUUID()) {
+  async steerTurn(threadId, text, clientUserMessageId = randomUUID(), expectedTurnId) {
     const entry = await this.refresh(threadId);
     const turn = latestTurn(entry.state);
+    if (expectedTurnId !== undefined && turn?.turnId !== expectedTurnId) throw new DesktopIpcError('The task changed. Review your prompt again.', { code: 'IPC_STALE_TURN' });
     if (!turn?.turnId || turn.status !== 'inProgress') throw new DesktopIpcError('The task has no active turn to guide', { code: 'IPC_TASK_IDLE' });
+    if (expectedTurnId !== undefined && pendingActions(entry.state).length) throw new DesktopIpcError('Answer the current question or approval before adding a prompt', { code: 'IPC_TASK_BUSY' });
     if (entry.state.unconfirmedTurnSubmissions?.some(submission => submission.terminal !== true)) throw new DesktopIpcError('An earlier message is not yet confirmed', { code: 'IPC_TASK_BUSY' });
     const response = await this.request('thread-follower-steer-turn', this._steerParams(threadId, text, entry.state, clientUserMessageId), { targetClientId: entry.owner });
     return response.result?.result;
@@ -755,6 +784,13 @@ export class DesktopIpcClient extends EventEmitter {
       expectedAnswers = validatedAnswers(action.questions, selection.answers, { allowSkip: true });
       params.response = { answers: expectedAnswers };
     } else if (action.kind === 'async-question') {
+      const sourceTurn = latestTurn(entry.state);
+      if (sourceTurn?.turnId !== action.turnId || !['inProgress', 'completed'].includes(sourceTurn?.status)) {
+        throw new DesktopIpcError('This question belongs to an earlier response. Use the current controls.', { code: 'IPC_STALE_ACTION' });
+      }
+      if (entry.state.unconfirmedTurnSubmissions?.some(submission => submission.terminal !== true)) {
+        throw new DesktopIpcError('An earlier message is not yet confirmed. Wait before answering this question.', { code: 'IPC_TASK_BUSY' });
+      }
       const answers = validatedAnswers(action.questions, selection.answers);
       const question = action.questions[0];
       if (answers[question.id].answers.length !== 1) throw new DesktopIpcError('Provide one text answer for this question', { code: 'IPC_INVALID_ACTION' });
@@ -834,9 +870,10 @@ export class DesktopIpcClient extends EventEmitter {
     }
   }
 
-  async interrupt(threadId) {
+  async interrupt(threadId, expectedTurnId) {
     const entry = await this.refresh(threadId);
     const turn = [...canonicalTurns(entry.state)].reverse().find(item => item.turnId != null);
+    if (expectedTurnId !== undefined && turn?.turnId !== expectedTurnId) throw new DesktopIpcError('The task changed. Select Stop response again.', { code: 'IPC_STALE_TURN' });
     if (!turn || turn.status !== 'inProgress') return { ok: true, interruptedTurnId: null };
     const response = await this.request('thread-follower-interrupt-turn', {
       conversationId: threadId, mode: 'user-stop', expectedTurnId: turn.turnId,

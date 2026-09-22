@@ -1,5 +1,66 @@
 # Change log
 
+## Control app 1.1.5 (build 7) / bridge 0.3.2 — 2026-09-22
+
+- Refresh the latest Mac state before reconnect replay, message polling, and
+  history restoration. Retire answered or obsolete questions so cached controls
+  cannot make them actionable again.
+- Send ordinary idle follow-ups directly, including after earlier **Add prompt**
+  use. Keep explicit confirmation for composition opened while busy, even when
+  the response completes during dictation.
+- Explain that **New session** is unsupported through the reviewed desktop
+  follower connection. Keep existing-task use and no separate CLI engine fallback;
+  this does not claim to repair the phone client's microphone behavior.
+- Rewrite the README, feature sheet, setup website, and unpublished Even Hub
+  guide/listing around Steer / Queue and continuity with Codex Mac App and Remote
+  on iPhone. Explain the separate bridge queue and current New session boundary.
+- Preserve all reviewed rollback gates, Text settings, queue protections,
+  approval correlation, and elapsed-time presentation.
+
+All 451 offline tests, the app build, and managed installation passed.
+Pairing and preferences are unchanged. Physical synchronization validation remains
+pending; the user reported successful physical Queue use on 0.3.1.
+See the [0.3.2 validation record](docs/validation-0.3.2.md).
+
+## Control app 1.1.4 (build 6) / bridge 0.3.1 — 2026-09-21
+
+- Add **Queue** to the captured draft choices, alongside **Steer** / **Send prompt**
+  and **Cancel**. Save up to 10 prompts per task in a durable local first-in,
+  first-out queue and send one at a time when the Mac task is ready.
+- Add optional **View queue** to the existing response-controls menu when nonempty:
+  ordered previews, full-text reading, removal, pause/resume, and clearing.
+  Reopening an idle task exposes queue controls when attention is needed.
+- Keep the Mac App's native queue untouched. Pause waiting prompts after failed,
+  interrupted, or explicitly stopped work. Uncertain delivery is never blindly retried.
+- Protect nonempty or unreadable queues during maintenance and retain the prior
+  release gates, Text settings, reply correlation, and elapsed-time display.
+
+All **416 offline checks** passed, as did the control app build, focused Swift
+checks, and signature verification. Control app 1.1.4 build 6 and bridge 0.3.1
+are installed; fresh diagnostics passed and pairing/preferences were preserved.
+The user reported physical **Add prompt** success on 0.3.0 and subsequently
+reported successful **Queue** use on 0.3.1. This does not certify every recovery
+case or client version.
+See the [0.3.1 validation record](docs/validation-0.3.1.md).
+
+## Control app 1.1.3 (build 5) / bridge 0.3.0 — 2026-09-21
+
+- Add a Stage 1 **Add prompt** prototype behind the existing native interrupt
+  confirmation: **Add prompt**, **Stop response**, or **Keep working**.
+- Capture a local draft while the Mac turn continues, then offer **Steer** or
+  **Cancel**. A finished response needs an explicit **Send prompt** confirmation.
+  Later prompts in that conversation retain a preview guard across restarts.
+  Timeout or a conflicting interaction closes input without sending.
+- Defer **Queue** / queue behavior until physical voice capture
+  is verified. Preserve question/approval correlation and compact elapsed labels.
+- Update release gates and keep Text settings available for 0.2.8 and 0.2.9.
+  Control app 1.1.3 build 5 bundles the updated management helpers.
+
+All 352 offline tests and managed installation passed. The user subsequently
+reported successful physical Add prompt use, as recorded with 0.3.1 above.
+See the [0.3.0 validation record](docs/validation-0.3.0.md) for the original checks;
+the broader physical recovery scenarios were not certified.
+
 ## Control app 1.1.2 / bridge 0.2.9 — 2026-09-21
 
 - Compact elapsed timestamps: `[2s]` below a minute, then `[1:04]`, including

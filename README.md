@@ -1,11 +1,15 @@
 # Even Terminal for Codex Mac App
 
-**Use your Codex Mac App conversations in Even Terminal on G2 glasses.**
+**One conversation across Codex Mac App, Remote on iPhone, and Even G2 glasses.**
 
-This is for people who use **Even G2 + Even Terminal** and do their work in the
-**Codex Mac App**, without running Codex in a terminal. Find an existing
-conversation in that Mac App, follow its progress, and continue it from your glasses. Keep using
-the same conversation when you return to the Mac.
+Start in the **Codex Mac App**, continue from **Remote in the Codex phone app**,
+and pick up the same supported Mac conversation in **Even Terminal on your G2**.
+The Mac keeps doing the work. Your glasses give you the context and controls to
+keep it moving, without a separate Codex CLI session.
+
+**Steer now. Queue what's next.** Add context while Codex works, choose whether
+it should affect the current response or wait for the next turn, and manage
+multiple queued prompts directly from the glasses.
 
 [**Start with the setup guide →**](https://daviddemri26.github.io/G2_Terminal_Codex_Mac_App/)
  · [Read the guide on GitHub](docs/getting-started.md)
@@ -22,16 +26,50 @@ A small Mac window shows whether the bridge is working, helps you pair your phon
 and lets you choose text presentation. A background service handles the connection
 and starts when you sign in. Closing the window leaves it running.
 
-## What you can do
+## Steer / Queue, directly from your glasses
+
+| Control | What it does |
+| --- | --- |
+| **Add prompt** | Dictate a new instruction while the Mac continues working |
+| **Steer** | Add that instruction to the current response |
+| **Queue** | Save it for a later turn, after the work already in progress |
+| **View queue** | Read, remove, pause, resume, or clear waiting prompts |
+| **Stop response** | Stop the current response and pause queued work |
+
+While Codex is working: **long press → Yes → Add prompt → dictate with a second
+long press → Steer or Queue**. The first **Yes** opens the bridge's controls;
+Codex continues unless you choose **Stop response**. When the conversation is
+idle, ordinary prompts send directly, without this extra menu.
+
+The queue keeps up to **10 prompts per conversation**, survives bridge restarts,
+and sends them in order. It is separate from the Mac App's native queue; prompts
+appear in the shared conversation when sent.
+
+This explicit glasses workflow is an addition to unmodified Even Terminal
+**0.10.4**. That version has an internal automatic queue; this project adds the
+**Steer / Queue choice, persistent queue management, and connection to the
+existing Codex Mac App task engine**. See the [feature overview](docs/features.md)
+and [full controls](docs/usage.md#add-prompt-and-queue--bridge-032).
+
+## Follow the work across your devices
+
+Remote on iPhone and the glasses access the same supported Mac tasks through
+their respective connections. You can switch devices without copying the
+conversation. Remote uses the Mac App's own remote connection; the glasses use
+the Even Realities phone app and this bridge. Remote is not an extra relay in
+the glasses connection and must already be configured to access your Mac.
+
+## What else you can do
 
 - Find and reopen supported local Codex conversations, with their history.
-- Follow public progress and final answers, then send a follow-up or interrupt.
+- Follow public updates, activity summaries, elapsed timestamps, and final answers.
 - Answer supported questions and approval choices; complex controls remain in the Mac App.
 - Choose message timestamps, live progress updates, and paragraph spacing. **The original display remains the default.**
 - Pair your phone with a QR code, check status, set launch at login, and run diagnostics.
 
 The glasses still control their own font, brightness, wrapping, and built-in
-labels. Even Terminal for Codex Mac App does not reproduce every Mac control. See the
+labels. Create new conversations in the Codex Mac App or Remote first.
+Even Terminal for Codex Mac App does not reproduce every Mac control. See the
 [interaction details](client-contract/README.md) for precise support.
 
 ## Start here
@@ -120,6 +158,7 @@ send a prompt through the live service. Use the reviewed Node version.
 | Area | Guide |
 | --- | --- |
 | First installation and pairing | [Getting started](docs/getting-started.md) |
+| Steer / Queue and cross-device continuity | [Feature overview](docs/features.md) |
 | Controls and text settings | [Daily use](docs/usage.md) |
 | Network choices and limits | [Tailscale / same Wi-Fi](docs/network-options.md) |
 | Components and local folders | [Architecture](docs/architecture.md) |

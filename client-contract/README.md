@@ -1,4 +1,4 @@
-# Even Terminal client contract for Desktop Bridge 0.2.9
+# Even Terminal client contract for Desktop Bridge 0.3.2
 
 The canonical module is `bridge/client-contract.mjs`. It adapts normalized desktop pending actions to the existing Even Terminal wire protocol. This directory holds its documentation and tests. It does not modify or redistribute the phone/glasses application. All bridge-written labels and errors are English. User text and Codex output retain their original language.
 
@@ -100,6 +100,91 @@ wrapping, and built-in `tool end:` prefix.
 The 0.2.9 source, integration, installation, and physical-device validation results
 are recorded separately in [the release validation record](../docs/validation-0.2.9.md).
 The historical physical checks below do not certify these new activity rows.
+
+## Historical Add prompt prototype in 0.3.0
+
+The stock client's native interrupt confirmation, including **Yes**, cannot be
+removed by this backend. The subsequent bridge menu offers **Add prompt**,
+**Stop response**, and **Keep working**. Opening this menu or local input does
+not interrupt the actual Mac turn; only **Stop response** invokes interruption.
+
+**Add prompt** temporarily presents an input-ready state to the client while the
+Mac keeps working. The next captured prompt is held as a local draft and shown
+for **Steer** or **Cancel**. Steer targets the same still-active native turn;
+it is not a stop/restart action. If that observed turn is now complete/idle, a
+fresh **Send prompt** / **Cancel** preview is required before starting a follow-up.
+Timeout, a replaced turn, or collision with a native pending interaction closes
+local input without submitting the draft. The ordinary prompt route has no draft
+identity token: after the first Add prompt, a durable per-conversation guard
+requires preview confirmation for later prompts, including across reconnects
+and restarts. In 0.3.0, **Queue** was deferred until a physical
+voice test established that the stock client exposed a usable input path.
+
+The prototype retains the existing pending-action correlation and durable delivery
+checks. It does not authorize a stale menu choice or retry an uncertain mutation.
+The current timestamp format, `[2s]` then `[1:04]`, is unchanged. The phone/glasses
+client has not been modified, and an emitted input-ready event does not prove
+that voice input opens on a physical device. Source checks, managed installation,
+and physical behavior are tracked separately in the
+[0.3.0 validation record](../docs/validation-0.3.0.md).
+
+## Durable local queue in 0.3.1
+
+The user subsequently reported physical Add prompt success on 0.3.0. Version
+0.3.1 adds **Queue** to both draft modes: **Steer / Queue / Cancel** while busy,
+or **Send prompt / Queue / Cancel** after completion. This stores the exact draft
+in the bridge's private durable FIFO, up to 10 entries per task. It does not write
+to or replace the native Mac App queue. Queue delivery starts a follow-up only
+when the current task and earlier queued work permit it.
+
+Local menus retain numbered-question correlation and never become native IPC
+option-picker requests. `createLocalMenu` supports `interrupt`, `draft`,
+`queue-list`, and `queue-item`; its frozen snapshot includes ordered queue IDs,
+phases, and the selected item. A fresh menu has a fresh presentation identity,
+and the provider rechecks queue and turn state before acting.
+
+When entries exist, the response-controls menu adds **View queue**, reached through
+the existing long press and native **Yes** confirmation. An idle task with a queue
+needing attention exposes the list when reopened. List previews are bounded to
+120 characters per message and choice labels to 60; the item view preserves the
+full exact body. **Remove** applies only to queued/paused entries. **Pause queue**,
+**Resume queue**, **Clear queue**, and **Back** use the same correlated selections.
+Sending/unknown entries block resume and clear, and cannot be removed by the menu.
+
+The bridge pauses waiting entries after failure, interruption, or explicit Stop.
+Native questions/approvals take precedence. Sending/unknown entries are reconciled
+by exact message identity, never automatically replayed after an uncertain send.
+Nonempty queues protect maintenance even if the Mac task is idle. Existing draft
+review guards, public activity, timestamps, and final-answer presentation remain.
+The user subsequently reported successful physical Queue use on 0.3.1. That
+report is not certification of every recovery case or client version; offline,
+installation, and physical results remain separate in the
+[0.3.1 validation record](../docs/validation-0.3.1.md).
+
+## Current-state synchronization in 0.3.2
+
+The provider refreshes the authoritative Mac state before reconnect replay,
+message polling, and history restoration. An answered or obsolete native question
+is retired; cached interactive events must not make it actionable again. A
+reconnection restores the current pending action, with the existing correlation
+and delivery guards, rather than trusting an earlier local display state.
+
+Ordinary prompts submitted while idle go directly to the Mac even if this task
+previously used **Add prompt**. An explicit composition opened while busy still
+requires a draft confirmation if the response completes during capture. This
+distinction retains the safety of delayed dictation without making a historical
+Add prompt permanently change normal idle follow-ups.
+
+The stock HTTP route accepts a prompt without a session ID and can return a
+resolved session ID. The reviewed desktop follower routes, however, operate on
+an existing Mac task; no exposed native creation route has been verified.
+**New session** therefore reports a clear unsupported-operation error. Native
+projectless creation found inside the Mac App is not a verified follower API.
+There is no separate CLI engine fallback, and backend inspection does not prove
+that dictation opens in the phone's New session view.
+
+Offline tests and installation passed; physical synchronization validation remains pending;
+see the [0.3.2 record](../docs/validation-0.3.2.md).
 
 ## Display behavior and remaining limits
 

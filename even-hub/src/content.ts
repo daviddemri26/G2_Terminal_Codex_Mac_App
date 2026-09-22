@@ -8,7 +8,7 @@ export const topics = [
   },
   {
     id: 'daily', title: 'Daily use',
-    text: 'Open Even Terminal to use conversations.\nKeep the Codex Mac App open; Mac awake and logged in.\nChoose a conversation you recognize.\nRead replies and continue that conversation.\nThe companion Mac App shows status and text options.',
+    text: 'In Even Terminal, while Codex is working:\nLong-press > Yes > Add prompt.\nLong-press again to dictate.\nSteer adds context now; Queue saves it for later.\nView queue manages waiting prompts.',
   },
   {
     id: 'help', title: 'Troubleshoot',
@@ -16,7 +16,7 @@ export const topics = [
   },
   {
     id: 'about', title: 'About',
-    text: 'Even Terminal for Codex Mac App\nUse Even Terminal with your Codex Mac App.\nNo separate Codex CLI workflow is needed.\nThis offline guide cannot chat or pair devices.\nIndependent community project. Details on phone.',
+    text: 'Even Terminal for Codex Mac App\nSame Mac tasks on G2 and Remote on iPhone.\nKeep the Mac awake, logged in, and connected.\nThis offline guide cannot chat or pair devices.\nIndependent community project. Details on phone.',
   },
 ] as const;
 

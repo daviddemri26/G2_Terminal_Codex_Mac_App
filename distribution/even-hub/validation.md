@@ -3,6 +3,19 @@
 Candidate: **Even Terminal for Codex Mac App Guide 0.1.1**. This record concerns the guide companion,
 not a new release of the Mac bridge.
 
+## Documentation revision — 22 September 2026
+
+The unpublished 0.1.1 guide candidate now explains Steer / Queue and continuity
+between Codex Mac App, Remote on iPhone, and G2. Phone and native reference copy
+changed; runtime controls and permissions did not. Earlier package/capture results
+below apply to their recorded snapshot, not this revised text. Rebuild and obtain
+current physical captures before submission.
+
+For this text revision, all ten guide tests, strict TypeScript checking, and the
+production Vite build passed again. The setup website was also inspected at
+desktop and phone widths; local anchors resolved and the phone layout had no
+horizontal overflow. These browser checks are not physical G2 validation.
+
 ## Passed
 
 - Ten isolated navigation/controller tests using the actual SDK container

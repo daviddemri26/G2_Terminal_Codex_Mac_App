@@ -90,7 +90,7 @@ test('a late question acknowledgement ends with explicit terminal state, not ren
       return { confirmed: true, acknowledged: true };
     };
     await provider.respondQuestion(id, 'Blue', { requestId: action.id, actionToken: action.presentation.token });
-    const answerIndex = events.findIndex(event => event.type === 'question_answer');
+    const answerIndex = events.findIndex(event => event.type === 'question_answer' && Object.keys(event.answers ?? {}).length > 0);
     assert.ok(answerIndex > events.findIndex(event => event.type === 'result'));
     assert.ok(events.slice(answerIndex + 1).some(event => event.state === 'think_end'));
     assert.equal(events.at(-1).state, 'idle');
@@ -265,7 +265,7 @@ test('local async choice is rendered once despite turn input, native userMessage
     };
     await provider.respondQuestion(id, 'Café', { requestId: action.id, actionToken: action.presentation.token });
     await provider.watch(id);
-    const answers = events.filter(event => event.type === 'question_answer');
+    const answers = events.filter(event => event.type === 'question_answer' && Object.keys(event.answers ?? {}).length > 0);
     assert.equal(answers.length, 1);
     assert.deepEqual(Object.values(answers[0].answers), ['Café']);
     assert.equal(events.some(event => event.type === 'user_prompt' && event.text.includes('Café')), false);
@@ -286,7 +286,7 @@ test('an async choice accepted on the Mac during an active turn appears once wit
     client.emit('state', id, client.current);
     client.current.turns[0].items.push({ id: 'native-copy', type: 'userMessage', clientId: 'remote-choice', content: input });
     client.emit('state', id, client.current);
-    assert.equal(events.filter(event => event.type === 'question_answer').length, 1);
+    assert.equal(events.filter(event => event.type === 'question_answer' && Object.keys(event.answers ?? {}).length > 0).length, 1);
     assert.equal(client.replies.length, 0);
   } finally { await provider.close(); }
 });
@@ -333,7 +333,7 @@ test('native structured question can be answered once with exact displayed quest
     const response = await provider.respondQuestion(id, answer);
     assert.equal(response.confirmed, true);
     assert.deepEqual(client.replies[0].response.answers, { color: { answers: ['Blue'] } });
-    assert.equal(events.find(e => e.type === 'question_answer').answers[question.questions[0].question], 'Blue');
+    assert.equal(events.find(e => e.type === 'question_answer' && Object.keys(e.answers ?? {}).length > 0).answers[question.questions[0].question], 'Blue');
     await assert.rejects(provider.respondQuestion(id, answer), /No supported question/);
     assert.equal(client.replies.length, 1);
   } finally { await provider.close(); }
@@ -1062,5 +1062,145 @@ test('withdrawn file statistics never appear after the settle interval', async (
     await provider.watch(id); turn.diff = null; client.emit('state', id, client.current);
     await new Promise(resolve => setTimeout(resolve, 60));
     assert.equal(publicRows(events).length, 0);
+  } finally { await provider.close(); }
+});
+
+
+test('a question resolved on the Mac clears the live glasses controls without inventing an answer', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    const [old] = await provider.getActions(id);
+    events.length = 0;
+    client.current.requests = [];
+    client.emit('state', id, client.current);
+    assert.ok(events.some(event => event.type === 'question_answer' && event.bridgeActionReset && Object.keys(event.answers).length === 0));
+    assert.equal(provider.getStatus(id).state, 'busy');
+    assert.equal((await provider.getActions(id)).length, 0);
+    await assert.rejects(provider.respondQuestion(id, 'Blue', { actionToken: old.presentation.token }), /No supported question/);
+    assert.equal(client.replies.length, 0);
+  } finally { await provider.close(); }
+});
+
+test('reopening waits for a fresh Mac snapshot before presenting questions from a cached follow', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    client.refresh = async thread => {
+      client.current = state('completed', 'The Mac has finished.', 'new');
+      client.emit('state', thread, client.current); return { state: client.current };
+    };
+    await provider.watch(id);
+    assert.equal(events.some(event => event.type === 'user_question'), false);
+    assert.ok(events.some(event => event.bridgeActionReset));
+    assert.equal(provider.getStatus(id).state, 'idle');
+  } finally { await provider.close(); }
+});
+
+test('failed reopen clears old questions and blocks maintenance until state is known', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    await provider.getActions(id); events.length = 0;
+    client.refresh = async () => { throw new Error('Synthetic snapshot unavailable'); };
+    await assert.rejects(provider.watch(id), /snapshot unavailable/);
+    assert.equal(events.some(event => event.type === 'user_question'), false);
+    assert.ok(events.some(event => event.bridgeActionReset));
+    assert.ok(events.some(event => event.type === 'status' && event.state === 'idle'));
+    assert.equal(provider.getSubscribedSessions()[0].submissionPending, true);
+    assert.equal(client.replies.length, 0);
+  } finally { await provider.close(); }
+});
+
+
+test('fresh reconnect preserves the correlation of a still-pending question and silent polling does not reopen it', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    const [first] = await provider.getActions(id);
+    await provider.watch(id);
+    const [current] = await provider.getActions(id);
+    assert.equal(current.presentation.token, first.presentation.token);
+    assert.equal(current.presentation.presentationNumber, first.presentation.presentationNumber);
+    events.length = 0;
+    await provider.sync(id);
+    assert.equal(events.some(event => event.type === 'user_question' || event.bridgeActionReset), false);
+    await provider.respondQuestion(id, 'Blue', { actionToken: first.presentation.token });
+    assert.equal(client.replies.length, 1);
+  } finally { await provider.close(); }
+});
+
+
+test('Mac question resolution and final text in the same snapshot clear controls before streaming', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    await provider.getActions(id); events.length = 0;
+    client.current.requests = []; client.current.turns[0].items[0].text = 'First';
+    client.emit('state', id, client.current);
+    const reset = events.findIndex(event => event.type === 'status' && event.bridgeActionReset);
+    const start = events.findIndex(event => event.type === 'status' && event.state === 'text_start');
+    assert.ok(reset >= 0 && start > reset);
+    client.current.turns[0].items[0].text += ' and second'; client.emit('state', id, client.current);
+    assert.equal(events.filter(event => event.type === 'text_delta' && !event.bridgeFinalHeader).map(event => event.text).join(''), 'First and second');
+    assert.equal(events.some((event, index) => index > start && event.type === 'status' && event.state === 'text_end'), false);
+  } finally { await provider.close(); }
+});
+
+test('accepted ordinary Mac steering is shown once; pending and question-answer transport stay separate', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); await provider.watch(id); events.length = 0;
+    const item = { id: 'steer-one', type: 'steeringUserMessage', status: 'pending', clientUserMessageId: 'mac-steer-one', input: [{ type: 'text', text: 'Additional context from the Mac' }] };
+    client.current.turns[0].items.push(item); client.emit('state', id, client.current);
+    assert.equal(events.some(event => event.type === 'user_prompt'), false);
+    item.status = 'accepted'; client.emit('state', id, client.current);
+    item.serverUserMessageId = 'native-copy'; client.emit('state', id, client.current);
+    await provider.watch(id);
+    assert.deepEqual(events.filter(event => event.type === 'user_prompt').map(event => event.text), ['Additional context from the Mac']);
+    client.current.turns[0].items.push({ ...item, id: 'steer-two', clientUserMessageId: 'mac-steer-two', serverUserMessageId: undefined });
+    client.emit('state', id, client.current);
+    assert.equal(events.filter(event => event.type === 'user_prompt').length, 2, 'identical words with distinct native IDs are distinct prompts');
+    client.current.turns[0].items.push({ ...item, id: 'async-answer', clientUserMessageId: 'mac-choice', serverUserMessageId: undefined, input: [{ type: 'text', text: asyncReplyText('some-question') }] });
+    client.emit('state', id, client.current);
+    assert.equal(events.filter(event => event.type === 'user_prompt' && event.text.startsWith('<send_user_message')).length, 0);
+  } finally { await provider.close(); }
+});
+
+
+test('a polling sync failure clears the question and an authoritative recovery can present it again', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = state('inProgress', '', 'new'); client.current.requests = [questionRequest()];
+    await provider.getActions(id); events.length = 0;
+    const refresh = client.refresh.bind(client);
+    client.refresh = async () => { throw new Error('Synthetic sync failure'); };
+    await assert.rejects(provider.sync(id), /sync failure/);
+    assert.equal(provider.getStatus(id).state, 'idle');
+    assert.ok(events.some(event => event.bridgeActionReset));
+    assert.equal(provider.getSubscribedSessions()[0].submissionPending, true);
+    client.refresh = refresh;
+    await provider.sync(id);
+    assert.equal(provider.getStatus(id).state, 'awaiting');
+    assert.ok(events.some(event => event.type === 'user_question'));
+    assert.equal(client.replies.length, 0);
+  } finally { await provider.close(); }
+});
+
+
+test('a Mac answer from a past turn still closes an old glasses question after further work completed', async () => {
+  const { provider, client, events } = setup();
+  try {
+    client.current = asyncQuestionState('completed');
+    const [old] = await provider.getActions(id); events.length = 0;
+    client.current.turns.push({ turnId: 'past-answer', status: 'completed', params: { clientUserMessageId: 'remote-old-choice', input: [{ type: 'text', text: asyncReplyText(old.id) }] }, items: [] });
+    client.current.turns.push(...state('completed', 'Much later work completed.', 'latest-work').turns);
+    client.current.threadRuntimeStatus = { type: 'idle' };
+    client.emit('state', id, client.current);
+    assert.ok(events.some(event => event.type === 'question_answer' && Object.keys(event.answers).length === 0 && event.bridgeActionReset));
+    assert.equal(events.some(event => event.type === 'user_question'), false);
+    assert.equal(provider.getStatus(id).state, 'idle');
+    await assert.rejects(provider.respondQuestion(id, 'Café', { actionToken: old.presentation.token }), /No supported question/);
+    assert.equal(client.replies.length, 0);
   } finally { await provider.close(); }
 });

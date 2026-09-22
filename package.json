@@ -1,6 +1,6 @@
 {
   "name": "g2-desktop-bridge",
-  "version": "0.2.9",
+  "version": "0.3.2",
   "private": true,
   "type": "module",
   "description": "A local bridge between Even Terminal and the existing Codex Mac task engine.",

@@ -122,13 +122,45 @@ def idle(config):
                                         for row in rows)
 
 
+def pending_prompt_queue(support):
+    """Queue content is private; return only whether maintenance must be blocked."""
+    path = Path(support) / 'state/prompt-queue.json'
+    limit = 2 * 1024 * 1024
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except FileNotFoundError:
+        return False  # Legacy installations have no queue file.
+    except OSError:
+        return True
+    try:
+        with os.fdopen(descriptor, 'rb') as stream:
+            metadata = os.fstat(stream.fileno())
+            if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > limit:
+                return True
+            source = stream.read(limit + 1)
+            if len(source) > limit:
+                return True
+            record = json.loads(source)
+            if (not isinstance(record, dict) or set(record) != {'version', 'entries'} or
+                    type(record.get('version')) is not int or record['version'] != 1 or
+                    not isinstance(record.get('entries'), list)):
+                return True
+            return bool(record['entries'])
+    except (OSError, ValueError):
+        return True
+
+
 def pending_delivery(support):
+    # Check this even when the older delivery journal does not exist. Paused,
+    # queued, sending and unknown entries all protect the durable queue.
+    if pending_prompt_queue(support):
+        return True
     path = Path(support) / 'state/delivery.json'
     if not path.exists():
         return False
     try:
         record = read_json(path)
-        if record.get('version') != 1 or any(not isinstance(record.get(key), dict)
+        if not isinstance(record, dict) or record.get('version') != 1 or any(not isinstance(record.get(key), dict)
                                              for key in ('prompts', 'actions', 'receipts')):
             return True
         return bool(record['prompts'] or record['actions'])

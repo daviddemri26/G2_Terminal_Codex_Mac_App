@@ -2,7 +2,7 @@ import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, re
 import { dirname, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-const empty = () => ({ version: 1, prompts: {}, actions: {}, receipts: {}, presentationCounter: 0 });
+const empty = () => ({ version: 1, prompts: {}, actions: {}, receipts: {}, presentationCounter: 0, localInputGuards: {} });
 const failure = message => Object.assign(new Error(message), { statusCode: 409 });
 const actionKey = (threadId, requestId, fingerprint) => JSON.stringify([threadId, requestId, fingerprint]);
 
@@ -20,6 +20,11 @@ export class DeliveryStore {
             [data.prompts, data.actions, data.receipts].some(x => typeof x !== 'object' || Array.isArray(x))) throw new Error('invalid format');
         if (Object.hasOwn(data, 'presentationCounter') &&
             (!Number.isSafeInteger(data.presentationCounter) || data.presentationCounter < 0)) throw new Error('invalid presentation counter');
+        if (Object.hasOwn(data, 'localInputGuards') && (!data.localInputGuards ||
+            typeof data.localInputGuards !== 'object' || Array.isArray(data.localInputGuards) ||
+            Object.entries(data.localInputGuards).some(([id, guarded]) => !/^[0-9a-f-]{36}$/i.test(id) || guarded !== true))) {
+          throw new Error('invalid local input guard');
+        }
         // Keep unknown fields so the version-1 record remains safe across a
         // rollback. Older bridge stores likewise retain the parsed object.
         this.data = data;
@@ -60,6 +65,15 @@ export class DeliveryStore {
       try { unlinkSync(temporary); } catch {}
       throw new Error(`Sending is paused: delivery history could not be saved (${error.code ?? 'storage unavailable'}).`);
     }
+  }
+
+  requiresPromptReview(threadId) { return this.data.localInputGuards?.[threadId] === true; }
+  guardPromptInput(threadId) {
+    if (this.requiresPromptReview(threadId)) return;
+    this.data.localInputGuards ??= {};
+    this.data.localInputGuards[threadId] = true;
+    try { this.save(); }
+    catch (error) { delete this.data.localInputGuards[threadId]; throw error; }
   }
 
   prompt(threadId) { return this.data.prompts[threadId] ?? null; }

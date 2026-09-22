@@ -17,6 +17,10 @@ Even Terminal on phone/glasses
        Even Terminal for Codex Mac App.app
 ```
 
+**Remote in the Codex phone app** is a parallel native connection to these Mac
+App tasks. It is not part of the Even phone app → bridge message path. This
+bridge integrates existing supported Mac tasks, not a separate cloud task engine.
+
 The control window is not in the message path. It calls the bundled
 `operations/control.py` using Apple's Python interpreter. Closing the window or
 quitting the app does not stop launchd or the bridge. The control app does not send
@@ -52,7 +56,7 @@ change does not move private data, break pairing, or replace the running service
 | `…/EvenCodexBridge/control.json` | References to current/previous releases and existing configuration |
 | `…/EvenCodexBridge/preferences.json` | Private display preferences; original formatting is the default |
 | `…/EvenCodexBridge/pending-update.json` | Result/status of an explicitly requested bounded idle update |
-| `…/EvenCodexBridge/state/` | Durable delivery state; must survive updates |
+| `…/EvenCodexBridge/state/` | Durable delivery records, local interaction guards, and prompt queues; must survive updates |
 | `…/EvenCodexBridge/run/` and `logs/` | Process locks and bounded operational logs |
 | `…/EvenCodexBridge/status.json` and `transition.json` | Latest supervised status and update/recovery record |
 | `~/.even-terminal/config.json` | Existing pairing token and network settings; preserved during migration |
@@ -61,6 +65,26 @@ change does not move private data, break pairing, or replace the running service
 Node and `/usr/bin/python3` remain external runtime dependencies. A frozen package
 does not freeze these executables or the Codex Mac App. The manifest records the
 Node path/version, and validation detects incompatible changes.
+
+## Steer, Queue, and current conversation state
+
+`bridge/local-interaction.mjs` models the temporary controls and draft capture.
+The real Mac task remains busy while Even Terminal receives an input-ready view.
+A fresh task check precedes each **Steer**, **Send prompt**, or native reply;
+stale controls cannot authorize a mutation against a different turn.
+
+`bridge/prompt-queue.mjs` owns a persistent FIFO with up to ten prompts per task.
+It stores draft text locally until dispatch, unlike the delivery journal's
+identity/acknowledgement records. Queue files are private application state, not
+repository content. The queue is separate from the Mac App's native queue and
+is not mirrored into that native queue UI. Dispatch uses the existing Mac engine
+and delivery correlation; uncertain sends are reconciled rather than retried.
+
+Reconnect replay, message polling, and history restoration refresh authoritative
+Mac state before presenting choices. Completed or superseded native interactions
+are removed from replay. Accepted ordinary Mac steering messages are displayed
+once by their native identity. This keeps the bridge's menus aligned with work
+and answers entered through the native apps.
 
 ## Lifecycle and delivery
 

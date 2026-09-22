@@ -15,7 +15,7 @@ sys.path.insert(0, str(BASE / 'operations'))
 from common import DEFAULT_SUPPORT, api, digest, idle, load_config, pending_delivery, read_json
 from manage import health
 
-EXPECTED_BRIDGE_VERSION = 'G2 Desktop Bridge 0.2.7'
+EXPECTED_BRIDGE_VERSION = 'G2 Desktop Bridge 0.3.2'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--restart-idle-child', action='store_true')

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Use your existing Codex Mac App conversations from Even G2 glasses. A clear guide to installing Even Terminal for Codex Mac App, connecting Even Terminal, and choosing text settings.">
+  <meta name="description" content="One Codex Mac App conversation across Mac, Remote on iPhone, and Even G2. Steer the current response or queue prompts for later, directly from your glasses.">
   <meta name="theme-color" content="#102b29">
   <title>Even Terminal for Codex Mac App Guide</title>
   <link rel="icon" href="mark.svg" type="image/svg+xml">
@@ -14,16 +14,16 @@
   <a class="skip" href="#guide">Skip to setup guide</a>
   <header class="topbar">
     <a class="brand" href="#top"><img src="mark.svg" width="32" height="32" alt=""><span>Even Terminal for Codex Mac App</span></a>
-    <nav aria-label="Main navigation"><a href="#guide">Setup guide</a><a href="#text">Text settings</a><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App">GitHub <span aria-hidden="true">↗</span></a></nav>
+    <nav aria-label="Main navigation"><a href="#guide">Setup guide</a><a href="#steer-queue">Steer / Queue</a><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App">GitHub <span aria-hidden="true">↗</span></a></nav>
   </header>
   <main id="top">
     <section class="hero" aria-labelledby="hero-title">
       <div class="hero-inner">
         <div class="eyebrow"><span class="dot"></span> MADE FOR THE CODEX MAC APP</div>
-        <h1 id="hero-title">Your Codex Mac App conversations.<br><em>In Even Terminal on G2.</em></h1>
-        <p class="lead">Use Even Terminal on your G2 glasses to find, follow, and continue the conversations you already have in the Codex Mac App.</p>
-        <p class="audience">For Even G2 owners who work in the Codex Mac App.<br>No separate Codex CLI session to start or maintain.</p>
-        <div class="actions"><a class="button primary" href="#guide">Set up the Mac App <span aria-hidden="true">↓</span></a><a class="button secondary" href="#how">See how it works</a></div>
+        <h1 id="hero-title">One Codex conversation.<br><em>Mac. Phone. Glasses.</em></h1>
+        <p class="lead">Keep working in the same Codex Mac App conversation from Remote on iPhone or Even Terminal on G2. <strong>Steer now. Queue what’s next.</strong></p>
+        <p class="audience">Add context while Codex works. Save follow-ups for later.<br>Manage the queue directly from your glasses.</p>
+        <div class="actions"><a class="button primary" href="#guide">Set up the Mac App <span aria-hidden="true">↓</span></a><a class="button secondary" href="#steer-queue">Explore Steer / Queue</a></div>
         <div class="hero-note">PUBLIC ALPHA <span>Source installer · macOS 14+ · Specific Mac App build</span></div>
       </div>
       <div class="connection" aria-label="Your Codex Mac App connects through Even Terminal for Codex Mac App and the phone to Even G2">
@@ -36,7 +36,7 @@
     </section>
     <section class="intro wrap" id="how" aria-labelledby="why-title">
       <div><p class="eyebrow dark">WHY THIS APP EXISTS</p><h2 id="why-title">Use Even Terminal with<br>your Codex Mac App.</h2></div>
-      <div><p>Even Terminal connects glasses to coding agents. Even Terminal for Codex Mac App connects it to the task engine <strong>already running inside your Mac App</strong>. Your existing conversations stay there.</p><p>Browse supported local conversations, read progress and replies, send follow-ups, and respond to supported questions. Complex Mac controls still belong on the Mac.</p><a class="text-link" href="#technical">Read the precise interaction limits <span aria-hidden="true">↗</span></a></div>
+      <div><p>Even Terminal connects glasses to coding agents. Even Terminal for Codex Mac App connects it to the task engine <strong>already running inside your Mac App</strong>. Your existing conversations stay there.</p><p>Start at your desk, continue from Remote in the Codex phone app, and pick up the same supported Mac task on G2. Read public updates, answer supported questions, and send follow-ups. Remote uses its own Mac connection; the glasses connect through the Even Realities phone app and this bridge.</p><a class="text-link" href="#technical">Read the precise interaction limits <span aria-hidden="true">↗</span></a></div>
     </section>
     <div class="guide-layout wrap" id="guide">
       <aside class="guide-nav" aria-label="Guide sections">
@@ -47,6 +47,7 @@
         <a href="#pair"><span>04</span> Pair your phone</a>
         <a href="#first-use"><span>05</span> Find a conversation</a>
         <div class="nav-divider"></div>
+        <a href="#steer-queue">Steer / Queue</a>
         <a href="#text">Text settings</a>
         <a href="#help">Troubleshooting</a>
         <a href="#technical">Technical details</a>
@@ -95,6 +96,19 @@
           <p><strong>Now you have checked your actual devices.</strong> A green local status or successful installation tests alone cannot confirm what the glasses display.</p>
           <div class="daily"><h3>From now on</h3><p>Leave <strong>Launch at login</strong> on to start the bridge when you sign in. Close the window whenever you like; the service keeps running. Right-click the Dock icon → Options → Keep in Dock for easy access.</p><p class="small">The bridge does not keep your Mac awake, run before login, or launch the Codex Mac App or Tailscale for you.</p></div>
         </section>
+        <section id="steer-queue" class="guide-section" aria-labelledby="steer-title">
+          <div class="step-label">ADDED GLASSES CONTROLS</div><h2 id="steer-title">Steer now. Queue what’s next.</h2>
+          <p>Another idea while Codex is working? Add it from your glasses and decide when it should run.</p>
+          <div class="requirements">
+            <div><span class="check" aria-hidden="true">↗</span><div><h3>Steer the current response</h3><p>Choose <strong>Add prompt</strong>, dictate new context, then select <strong>Steer</strong>. The Mac keeps working while you compose.</p></div></div>
+            <div><span class="check" aria-hidden="true">+</span><div><h3>Queue the next requests</h3><p>Select <strong>Queue</strong> to save a prompt for a later turn. Add up to ten per conversation; they persist across bridge restarts and are sent in order.</p></div></div>
+            <div><span class="check" aria-hidden="true">≡</span><div><h3>Manage the queue on G2</h3><p><strong>View queue</strong> appears when messages are waiting. Read a draft, remove it, pause/resume, or clear waiting work.</p></div></div>
+          </div>
+          <ol class="steps"><li>During a response, long-press and confirm the native <strong>Yes</strong> dialog.</li><li>Select <strong>Add prompt</strong>. Codex continues; only <strong>Stop response</strong> stops it.</li><li>Use a second normal long press to dictate.</li><li>Choose <strong>Steer</strong>, <strong>Queue</strong>, or <strong>Cancel</strong>.</li></ol>
+          <p>Ordinary follow-ups in an idle conversation send directly. If work finishes during this explicit input flow, <strong>Send prompt</strong> replaces <strong>Steer</strong>.</p>
+          <div class="note"><strong>An addition to Even Terminal</strong><p>Unmodified Even Terminal 0.10.4 has an internal automatic queue. This bridge adds the explicit Steer / Queue choice and persistent queue management on the glasses, connected to your existing Codex Mac App tasks. Its queue is separate from the Mac App’s native queue; messages appear in the shared conversation when sent.</p></div>
+          <p class="small">Stopped or failed work pauses waiting prompts. Uncertain sends are not automatically retried. Create new conversations on the Mac or Remote first; New session from the glasses is not supported through this connection. <a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/docs/usage.md">Read the full controls and recovery rules.</a></p>
+        </section>
         <section id="text" class="guide-section" aria-labelledby="text-title">
           <div class="step-label">MAKE IT YOURS</div><h2 id="text-title">Choose how the text reads.</h2>
           <p>Open <strong>Even Terminal for Codex Mac App → Text</strong>. Keep the familiar original display, or adjust three simple options. Your actual conversation stays unchanged.</p>
@@ -105,7 +119,7 @@
               <label class="spacing-label" for="spacing">Paragraph spacing</label><select id="spacing"><option value="original">Original (default)</option><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select>
               <button class="reset" id="reset-preview" type="button">Reset preview</button>
             </div>
-            <div class="preview-content"><span class="preview-label">ILLUSTRATIVE TEXT PREVIEW</span><div id="preview-progress" class="preview-progress"><span class="time">[0m12] </span>I’m checking the result.</div><div class="preview-answer" id="preview-answer"><span class="time final-time">[0m35]</span><p>Your changes are ready.</p><p>The checks passed. You can review the result on your Mac.</p></div><p class="preview-caption">This preview stays in your browser. It does not change your Mac settings.</p></div>
+            <div class="preview-content"><span class="preview-label">ILLUSTRATIVE TEXT PREVIEW</span><div id="preview-progress" class="preview-progress"><span class="time">[12s] </span>I’m checking the result.</div><div class="preview-answer" id="preview-answer"><span class="time final-time">[35s]</span><p>Your changes are ready.</p><p>The checks passed. You can review the result on your Mac.</p></div><p class="preview-caption">This preview stays in your browser. It does not change your Mac settings.</p></div>
           </div>
           <p>Settings apply to the next response or reopened completed history. An active response keeps its initial settings. Questions, approvals, user messages, and code-block whitespace are preserved.</p>
           <p class="small">The Even client controls font, brightness, wrapping, and built-in labels such as “tool end:”. This preview explains spacing and visibility; it is not an exact glasses rendering.</p>
@@ -125,7 +139,7 @@
           <p>The Mac App owns the task engine. The bridge stores delivery records to correlate replies and recover uncertain connections. The separate control window manages status and preferences; it is not required to stay open.</p>
           <div class="technical-grid"><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/docs/architecture.md"><strong>Architecture <span aria-hidden="true">↗</span></strong><span>Components, folders, and lifecycle</span></a><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/client-contract/README.md"><strong>Interaction contract <span aria-hidden="true">↗</span></strong><span>Questions, approvals, rendering limits</span></a><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/docs/maintenance.md"><strong>Maintenance <span aria-hidden="true">↗</span></strong><span>Update, restore, and uninstall</span></a><a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/docs/development.md"><strong>Development <span aria-hidden="true">↗</span></strong><span>One source tree and offline tests</span></a></div>
           <div class="version-table"><h3>Reviewed combination</h3><dl><div><dt>Codex Mac App</dt><dd>26.915.31945 · build 9922</dd></div><div><dt>Even Terminal dependency</dt><dd>0.10.4</dd></div><div><dt>Node runtime</dt><dd>26.9.0</dd></div><div><dt>Hardware</dt><dd>Even G2; exact firmware not certified</dd></div></dl></div>
-          <p class="small">Compatibility is version-specific. <a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/compatibility.json">Release metadata</a> is authoritative. Source and documentation reviewed on 21 September 2026. Offline validation, installed-service checks, and physical device checks are separate.</p>
+          <p class="small">Compatibility is version-specific. <a href="https://github.com/daviddemri26/G2_Terminal_Codex_Mac_App/blob/main/compatibility.json">Release metadata</a> is authoritative. Source and documentation reviewed on 22 September 2026. Add prompt and Queue have user-reported physical tests; the latest 0.3.2 synchronization changes still need a physical check. Offline validation, installed-service checks, and physical device checks are separate.</p>
         </section>
       </div>
     </div>

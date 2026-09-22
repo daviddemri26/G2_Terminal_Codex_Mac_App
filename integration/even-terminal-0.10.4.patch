@@ -20,7 +20,26 @@
  // const cursorProvider = createCursorProvider(emit);
  // const opencodeProvider = createOpencodeProvider(emit);
  const providerRegistry = {
-@@ -149,58 +152,51 @@
+@@ -130,7 +133,7 @@
+ // POST /api/prompt — send a prompt to a session (create if needed)
+ router.post("/prompt", async (req, res) => {
+     const { text, sessionId, provider, cwd } = req.body ?? {};
+-    console.log(`[prompt] sessionId=${sessionId ?? "(none)"} (provider=${provider}) text=${(text || "").slice(0, 80)}`);
++    console.log(`[prompt] sessionId=${sessionId ?? "(none)"} (provider=${provider}) characters=${typeof text === "string" ? text.length : 0}`);
+     if (!text || typeof text !== "string") {
+         console.warn("[prompt] rejected: missing text field");
+         res.status(400).json({ error: "Missing 'text' field" });
+@@ -141,7 +144,8 @@
+         const targetProvider = getProvider(p);
+         const effectiveCwd = sessionId ? undefined : cwd ?? process.env.PROJECT_DIR;
+         const result = await targetProvider.prompt(sessionId, text, effectiveCwd);
+-        res.status(202).json({ ok: true, sessionId: result.sessionId, provider: result.provider });
++        res.status(202).json({ ok: true, sessionId: result.sessionId, provider: result.provider,
++            ...(result.draft === true ? { draft: true, sent: false } : {}) });
+     }
+     catch (err) {
+         console.error("[prompt] failed:", err.message);
+@@ -149,58 +153,51 @@
          res.status(statusCode).json({ error: err.message });
      }
  });
@@ -123,7 +142,7 @@
  });
  // GET /api/status
  router.get("/status", (req, res) => {
-@@ -216,7 +212,7 @@
+@@ -216,13 +213,13 @@
          return;
      }
      res.json({
@@ -132,7 +151,28 @@
          sessionId,
          provider: status.provider,
      });
-@@ -245,6 +241,7 @@
+ });
+ // GET /api/messages?sessionId=&after=
+-router.get("/messages", (req, res) => {
++router.get("/messages", async (req, res) => {
+     const after = parseInt(req.query.after) || 0;
+     const sessionId = req.query.sessionId;
+     const providerName = req.query.provider;
+@@ -230,7 +227,12 @@
+         res.status(400).json({ error: "Missing 'sessionId'" });
+         return;
+     }
+-    const status = getProvider(providerName).getStatus(sessionId);
++    const targetProvider = getProvider(providerName);
++    if (desktopBridgeEnabled && (providerName || getDefaultProvider()) === "codex") {
++        try { await targetProvider.sync(sessionId); }
++        catch (error) { actionError(res, error); return; }
++    }
++    const status = targetProvider.getStatus(sessionId);
+     const messages = getMessages(sessionId, after);
+     res.json({
+         messages,
+@@ -245,6 +247,7 @@
      const provider = req.query.provider || getDefaultProvider();
      try {
          if (provider === "codex") {
@@ -140,17 +180,17 @@
              const thread = await codexClient.threadRead(id, true);
              res.json(thread);
          }
-@@ -298,6 +295,7 @@
+@@ -298,6 +301,7 @@
  });
  // Initialize the bridge connection before the remote CLI can create its thread.
  router.post("/codex/ensure-app-server", async (_req, res) => {
-+    if (desktopBridgeEnabled) { res.status(409).json({ error: "This bridge uses the Mac app. A separate Codex engine will not be started." }); return; }
++    if (desktopBridgeEnabled) { res.status(409).json({ error: "New session is not supported by this bridge yet. Create a task in the Mac app or Remote, then select it on your glasses." }); return; }
      try {
          await codexClient.connect();
          res.json({ started: true, port: CODEX_APP_SERVER_PORT });
 --- a/dist/routes/events.js
 +++ b/dist/routes/events.js
-@@ -2,6 +2,8 @@
+@@ -2,9 +2,12 @@
  import { writeDebugLog } from "../logger.js";
  import { redactTokenQueryParam } from "../http-log.js";
  const router = Router();
@@ -159,26 +199,45 @@
  // ── Per-session message ring buffer + SSE clients ────
  const MAX_MESSAGES_PER_SESSION = 500;
  const sessions = new Map();
-@@ -16,6 +18,16 @@
++const synchronizingClients = new WeakSet();
+ function getSession(sessionId) {
+     let s = sessions.get(sessionId);
+     if (!s) {
+@@ -16,18 +19,40 @@
  export function pushMessage(sessionId, msg) {
      const s = getSession(sessionId);
      const id = s.nextId++;
-+    if (msg.type === "result" && s.activeTurnStartId !== null) {
++    const isLocal = msg.bridgeLocalInteraction === true;
++    if (msg.bridgeLocalReset === true) {
++        // Local controls expire together; never replay a retired menu or compose state.
++        s.messages = s.messages.filter(entry => entry.msg.bridgeLocalInteraction !== true);
++    }
++    if (msg.bridgeActionReset === true) {
++        // Reconciled native controls must not be replayed after resolution.
++        s.messages = s.messages.filter(entry => entry.msg.bridgeLocalInteraction === true ||
++            (!["user_question", "permission_request"].includes(entry.msg.type) &&
++                !(entry.msg.type === "status" && entry.msg.state === "awaiting")));
++    }
++    if (!isLocal && msg.type === "result" && s.activeTurnStartId !== null) {
 +        // Keep public updates, question context, and the complete final answer.
-+        const cleared = s.messages.findLast(entry => entry.msg.type === "task_progress" && entry.msg.current === "" && entry.msg.completed === entry.msg.total);
-+        const ends = ["think_end", "text_end"].map(state => s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.type === "status" && entry.msg.state === state));
++        const cleared = s.messages.findLast(entry => entry.msg.bridgeLocalInteraction !== true && entry.msg.type === "task_progress" && entry.msg.current === "" && entry.msg.completed === entry.msg.total);
++        const ends = ["think_end", "text_end"].map(state => s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.bridgeLocalInteraction !== true && entry.msg.type === "status" && entry.msg.state === state));
 +        s.messages = s.messages.filter(entry => entry.id < s.activeTurnStartId || entry.msg.bridgePublicUpdate === true || entry.msg.bridgeFinalHeader === true || ["user_prompt", "user_question", "question_answer"].includes(entry.msg.type) || entry === cleared || ends.includes(entry));
 +    }
 +    if (msg.type === "task_progress" || msg.type === "running_stats") {
 +        // Current progress and elapsed time never crowd out conversation replay.
-+        s.messages = s.messages.filter(entry => entry.msg.type !== msg.type);
++        s.messages = s.messages.filter(entry => entry.msg.type !== msg.type || (entry.msg.bridgeLocalInteraction === true) !== isLocal);
 +    }
      s.messages.push({ id, msg });
-     if (msg.type === "user_prompt" && s.activeTurnStartId === null)
+-    if (msg.type === "user_prompt" && s.activeTurnStartId === null)
++    // Compose idle/busy is a client presentation, not a change to the native turn.
++    if (!isLocal && msg.type === "user_prompt" && s.activeTurnStartId === null)
          s.activeTurnStartId = id;
-@@ -23,11 +35,11 @@
+-    if (msg.type === "status" && msg.state === "busy" && s.activeTurnStartId === null)
++    if (!isLocal && msg.type === "status" && msg.state === "busy" && s.activeTurnStartId === null)
          s.activeTurnStartId = id;
-     if (msg.type === "status" && msg.state === "idle")
+-    if (msg.type === "status" && msg.state === "idle")
++    if (!isLocal && msg.type === "status" && msg.state === "idle")
          s.activeTurnStartId = null;
 -    // Keep the active turn intact so a mid-turn client can replay its user prompt.
 -    const retainFrom = Math.min(id - MAX_MESSAGES_PER_SESSION + 1, s.activeTurnStartId ?? Infinity);
@@ -186,14 +245,31 @@
 -    if (removeCount > 0)
 -        s.messages.splice(0, removeCount);
 +    if (s.messages.length > MAX_MESSAGES_PER_SESSION) {
-+        const prompt = s.activeTurnStartId === null ? null : s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.type === "user_prompt");
++        const prompt = s.activeTurnStartId === null ? null : s.messages.findLast(entry => entry.id >= s.activeTurnStartId && entry.msg.bridgeLocalInteraction !== true && entry.msg.type === "user_prompt");
 +        const tail = s.messages.slice(-(MAX_MESSAGES_PER_SESSION - (prompt ? 1 : 0)));
 +        s.messages = prompt && !tail.includes(prompt) ? [prompt, ...tail] : s.messages.slice(-MAX_MESSAGES_PER_SESSION);
 +    }
      return id;
  }
  export function getMessages(sessionId, after) {
-@@ -81,13 +93,15 @@
+@@ -46,6 +71,7 @@
+         return;
+     let deadCount = 0;
+     for (const res of s.clients) {
++        if (synchronizingClients.has(res)) continue;
+         try {
+             res.write(`id: ${id}\ndata: ${data}\n\n`);
+         }
+@@ -68,7 +94,7 @@
+     const s = sessions.get(sessionId);
+     return !!s && s.clients.size > 0;
+ }
+-router.get("/events", (req, res) => {
++router.get("/events", async (req, res) => {
+     const sessionId = req.query.sessionId;
+     if (!sessionId) {
+         res.status(400).json({ error: "Missing 'sessionId' query parameter" });
+@@ -81,29 +107,64 @@
      res.flushHeaders();
      res.write(":ok\n\n");
      const s = getSession(sessionId);
@@ -202,18 +278,74 @@
 -        for (const entry of s.messages) {
 -            res.write(`id: ${entry.id}\ndata: ${JSON.stringify(entry.msg)}\n\n`);
 -        }
-+    const lastEventId = req.headers["last-event-id"];
-+    const after = typeof lastEventId === "string" && /^\d+$/.test(lastEventId) ? Number(lastEventId) : null;
-+    if (req.query.needReplay === "true" || after !== null) {
-+        const canResume = after !== null && after < s.nextId;
-+        const replay = canResume ? s.messages.filter(entry => entry.id > after) : s.messages;
-+        for (const entry of replay) res.write(`id: ${entry.id}\ndata: ${JSON.stringify(entry.msg)}\n\n`);
-     }
+-    }
++    const beforeWatchId = s.nextId - 1;
++    let disconnected = false;
++    // Count the connection for lifecycle guards, but buffer its live frames
++    // until fresh state has retired stale controls and replay is ready.
      s.clients.add(res);
-+    if (sessionWatchHandler) Promise.resolve().then(() => sessionWatchHandler(sessionId, req.query.provider)).catch(err => console.warn(`[desktop-bridge] Unable to watch selected session: ${err.message}`));
-     console.log(`[sse] Client connected request=${redactTokenQueryParam(req.originalUrl)} session=${sessionId} `
-         + `(session clients: ${s.clients.size}, total: ${clientCount()})`);
-     // Heartbeat every 15s
+-    console.log(`[sse] Client connected request=${redactTokenQueryParam(req.originalUrl)} session=${sessionId} `
+-        + `(session clients: ${s.clients.size}, total: ${clientCount()})`);
+-    // Heartbeat every 15s
++    synchronizingClients.add(res);
+     const heartbeat = setInterval(() => {
+-        try {
+-            res.write(":heartbeat\n\n");
+-        }
++        try { res.write(":heartbeat\n\n"); }
+         catch {
++            disconnected = true;
+             clearInterval(heartbeat);
+             s.clients.delete(res);
++            synchronizingClients.delete(res);
+         }
+     }, 15000);
+     req.on("close", () => {
++        disconnected = true;
+         clearInterval(heartbeat);
+         s.clients.delete(res);
++        synchronizingClients.delete(res);
+         console.log(`[sse] Client disconnected (total: ${clientCount()})`);
+     });
++    let synchronizationFailed = false;
++    if (sessionWatchHandler) {
++        try { await sessionWatchHandler(sessionId, req.query.provider); }
++        catch {
++            synchronizationFailed = true;
++            console.warn("[desktop-bridge] Unable to refresh selected session before replay.");
++        }
++    }
++    if (disconnected) return;
++    const lastEventId = req.headers["last-event-id"];
++    const cursor = typeof lastEventId === "string" && /^\d+$/.test(lastEventId) ? Number(lastEventId) : null;
++    const after = Number.isSafeInteger(cursor) && cursor >= 0 ? cursor : null;
++    const wantsReplay = req.query.needReplay === "true" || after !== null;
++    const canResume = after !== null && after < s.nextId;
++    let replay = wantsReplay ? (canResume ? s.messages.filter(entry => entry.id > Math.min(after, beforeWatchId)) : s.messages)
++        : s.messages.filter(entry => entry.id > beforeWatchId);
++    if (synchronizationFailed) {
++        // An unavailable owner cannot validate cached interactive controls.
++        replay = replay.filter(entry => entry.msg.bridgeLocalInteraction !== true &&
++            !["user_question", "permission_request"].includes(entry.msg.type) &&
++            !(entry.msg.type === "status" && ["busy", "awaiting", "think_start", "text_start"].includes(entry.msg.state)));
++    }
++    for (const entry of replay) res.write(`id: ${entry.id}\ndata: ${JSON.stringify(entry.msg)}\n\n`);
++    if (synchronizationFailed) {
++        // Settle this client's view without altering the real turn or buffer.
++        const unavailable = [
++            { type: "question_answer", answers: {}, bridgeActionReset: true },
++            { type: "notification", message: "Unable to refresh this task from the Mac. Reopen it after the connection recovers." },
++            { type: "status", state: "think_end" },
++            { type: "status", state: "text_end" },
++            { type: "status", state: "idle" },
++        ];
++        for (const msg of unavailable) res.write(`data: ${JSON.stringify({ ...msg, sessionId })}\n\n`);
++    }
++    synchronizingClients.delete(res);
++    console.log(`[sse] Client connected request=${redactTokenQueryParam(req.originalUrl)} session=${sessionId} `
++        + `(session clients: ${s.clients.size}, total: ${clientCount()})`);
+ });
+ export default router;
 --- a/dist/codex/session.js
 +++ b/dist/codex/session.js
 @@ -134,18 +134,35 @@

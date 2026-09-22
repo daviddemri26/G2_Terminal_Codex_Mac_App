@@ -2,7 +2,9 @@
 
 Even Terminal for Codex Mac App is for **Even G2 owners who use Even Terminal and the Codex Mac App**.
 You can keep working in that Mac App, then find and continue the same supported
-conversation from your glasses. You do not need a separate Codex CLI workflow.
+conversation from your glasses or **Remote on iPhone**. Add context with **Steer**
+or save another request with **Queue**, directly from G2. You do not need a
+separate Codex CLI workflow. [Explore the features](features.md).
 
 This guide takes you through the current public alpha. Installation uses a guided
 source installer; it is not yet a signed, notarized app that works on every Mac
@@ -162,13 +164,25 @@ in the Even Realities app where available. Code-block whitespace is preserved.
 
 ## Everyday use
 
+When the Mac is working, use **long press → Yes → Add prompt**, then a second
+normal long press to dictate. Choose **Steer** to influence the current response
+or **Queue** to save the prompt for later. **View queue** appears when messages
+are waiting, with reading, removal, pause/resume, and clear controls.
+When the conversation is idle, ordinary follow-ups send directly.
+[Read the full control flow](usage.md#add-prompt-and-queue--bridge-032).
+
+Use **Remote in the Codex phone app** to access the same Mac tasks when convenient.
+Remote has its own setup and connection; it is not needed as a relay for the
+glasses. Create new conversations on the Mac or Remote first, then select them
+in Even Terminal. **New session** on the glasses is not supported by this bridge.
+
 Leave **Launch at login** enabled if you want the bridge to start whenever you
 sign into this Mac. It does not launch Codex or Tailscale for you, prevent sleep,
 or run before login. Closing or quitting Even Terminal for Codex Mac App leaves the background service
 running.
 
 To keep the control window handy, right-click its Dock icon and select
-**Options → Keep in Dock**. Use the same conversations on Mac and glasses; there
+**Options → Keep in Dock**. Use the same conversations on Mac, Remote, and glasses; there
 is no second copy of your task engine to manage.
 
 ## If something needs attention

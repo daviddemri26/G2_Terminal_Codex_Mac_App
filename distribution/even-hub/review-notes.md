@@ -33,7 +33,7 @@ continue to work when the separate Mac bridge is unavailable.
 ## Release notes for the first candidate
 
 Initial English setup and reference guide for Even Terminal for Codex Mac App. Includes setup steps,
-daily-use reminders, troubleshooting, compatibility guidance, and links to the
+Steer / Queue instructions, Mac/Remote/glasses continuity, troubleshooting, compatibility guidance, and links to the
 Mac installation tutorial and project support.
 
 ## Outstanding submission details
